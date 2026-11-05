@@ -509,8 +509,8 @@ export default function App() {
 
 const tabBarStyle: React.CSSProperties = {
   display: "flex",
-  borderBottom: "1px solid rgba(240, 217, 168, 0.25)",
-  background: "rgba(0, 0, 0, 0.3)",
+  borderBottom: "2px solid var(--gold)",
+  background: "rgba(0, 0, 0, 0.4)",
 };
 
 const tabStyle: React.CSSProperties = {
@@ -518,18 +518,20 @@ const tabStyle: React.CSSProperties = {
   padding: "10px 4px",
   background: "transparent",
   border: "none",
-  color: "rgba(255, 255, 255, 0.65)",
+  color: "var(--sage)",
   cursor: "pointer",
-  fontSize: 11,
-  fontWeight: 600,
+  fontSize: 10,
+  fontWeight: 700,
   transition: "all 0.15s ease",
+  fontFamily: "var(--mono)",
 };
 
 const activeTabStyle: React.CSSProperties = {
   ...tabStyle,
-  color: "#F0D9A8",
-  background: "rgba(240, 217, 168, 0.12)",
-  borderBottom: "2px solid #F0D9A8",
+  color: "var(--gold)",
+  background: "rgba(221, 170, 84, 0.2)",
+  borderBottom: "3px solid var(--gold)",
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.5)",
 };
 
 const sidebarBodyStyle: React.CSSProperties = {
@@ -539,70 +541,88 @@ const sidebarBodyStyle: React.CSSProperties = {
 };
 
 const groupItemStyle: React.CSSProperties = {
-  border: "1px solid rgba(255, 255, 255, 0.15)",
-  borderRadius: 8,
+  border: "2px solid var(--border)",
+  borderRadius: 6,
   padding: "8px 10px",
   marginBottom: 8,
   cursor: "pointer",
   transition: "all 0.15s ease",
+  background: "rgba(36, 86, 56, 0.4)",
 };
 
 const progressBgStyle: React.CSSProperties = {
   width: "100%",
-  height: 6,
-  borderRadius: 3,
-  background: "rgba(255, 255, 255, 0.15)",
+  height: 8,
+  borderRadius: 4,
+  background: "var(--wood-dark)",
   overflow: "hidden",
+  border: "2px solid var(--gold)",
+  boxSizing: "border-box",
 };
 
 const hudBtnPrimary: React.CSSProperties = {
-  padding: "4px 8px",
-  borderRadius: 6,
-  border: "none",
-  background: "#aa3bff",
-  color: "#fff",
-  fontWeight: 600,
-  fontSize: 11,
+  padding: "6px 10px",
+  borderRadius: 4,
+  border: "2px solid var(--gold)",
+  background: "var(--accent)",
+  color: "var(--cream)",
+  fontWeight: 700,
+  fontSize: 10,
   cursor: "pointer",
+  fontFamily: "var(--mono)",
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.5)",
+  boxShadow: "0 3px 0 rgba(0, 0, 0, 0.3)",
 };
 
 const hudBtnSecondary: React.CSSProperties = {
-  padding: "4px 8px",
-  borderRadius: 6,
-  border: "1px solid rgba(240, 217, 168, 0.4)",
-  background: "rgba(255, 255, 255, 0.08)",
-  color: "#fff",
-  fontWeight: 600,
-  fontSize: 11,
+  padding: "6px 10px",
+  borderRadius: 4,
+  border: "2px solid var(--gold)",
+  background: "var(--wood-dark)",
+  color: "var(--cream)",
+  fontWeight: 700,
+  fontSize: 10,
   cursor: "pointer",
+  fontFamily: "var(--mono)",
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.5)",
+  boxShadow: "0 3px 0 rgba(0, 0, 0, 0.3)",
 };
 
 const miniBtnStyle: React.CSSProperties = {
-  padding: "2px 6px",
-  borderRadius: 4,
-  border: "1px solid rgba(240, 217, 168, 0.4)",
-  background: "rgba(255, 255, 255, 0.1)",
-  color: "#F0D9A8",
-  fontSize: 10,
+  padding: "3px 8px",
+  borderRadius: 3,
+  border: "2px solid var(--gold)",
+  background: "var(--wood-dark)",
+  color: "var(--cream)",
+  fontSize: 9,
   cursor: "pointer",
+  fontFamily: "var(--mono)",
+  fontWeight: 600,
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.5)",
+  boxShadow: "0 2px 0 rgba(0, 0, 0, 0.3)",
 };
 
 const closeBtnStyle: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "#F0D9A8",
-  fontSize: 14,
+  color: "var(--gold)",
+  fontSize: 16,
   cursor: "pointer",
+  fontWeight: 700,
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.8)",
 };
 
 const quickPayBtnStyle: React.CSSProperties = {
   width: "100%",
-  padding: "8px 12px",
-  borderRadius: 6,
-  border: "none",
-  background: "#27ae60",
-  color: "#fff",
+  padding: "10px 14px",
+  borderRadius: 4,
+  border: "3px solid var(--gold)",
+  background: "var(--accent)",
+  color: "var(--cream)",
   fontWeight: 700,
-  fontSize: 12,
+  fontSize: 11,
   cursor: "pointer",
+  fontFamily: "var(--mono)",
+  textShadow: "1px 1px 0 rgba(0, 0, 0, 0.5)",
+  boxShadow: "0 4px 0 rgba(0, 0, 0, 0.3)",
 };

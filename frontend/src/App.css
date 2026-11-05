@@ -1,5 +1,6 @@
 /**
- * App.css — Responsive Web3 Game HUD Styles
+ * App.css — Stardew Valley Inspired Responsive Game HUD
+ * Wooden panel aesthetic with pixel-art design
  * Optimized for Desktop (>1024px), Tablet (768px-1024px), and Mobile (<768px)
  */
 
@@ -27,17 +28,21 @@
 /* ── TOP-LEFT HEADER PANEL ── */
 .hud-top-left {
   pointer-events: auto;
-  background: rgba(18, 22, 20, 0.9);
+  background: var(--bg-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 2px solid #F0D9A8;
-  border-radius: 12px;
+  border: 3px solid var(--gold);
+  border-radius: 8px;
   padding: 10px 14px;
-  color: #ffffff;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  color: var(--cream);
+  box-shadow: 
+    0 8px 0 rgba(0, 0, 0, 0.3),
+    0 12px 32px rgba(0, 0, 0, 0.6),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
   max-width: 290px;
   align-self: flex-start;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  image-rendering: pixelated;
 }
 
 .hud-top-left .logo-img {
@@ -48,20 +53,26 @@
 
 .hud-top-left .title-text {
   margin: 0;
-  font-size: 18px;
-  color: #F0D9A8;
-  letter-spacing: 0.5px;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  font-family: var(--heading);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
 .hud-top-left .contract-pill {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 9px;
+  color: var(--sage);
   font-family: var(--mono);
   display: inline-block;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(221, 170, 84, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -94,19 +105,23 @@
   top: 10px;
   right: 10px;
   z-index: 35;
-  background: rgba(18, 22, 20, 0.95);
+  background: var(--wood-dark);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 2px solid #F0D9A8;
-  border-radius: 8px;
-  color: #F0D9A8;
+  border: 3px solid var(--gold);
+  border-radius: 6px;
+  color: var(--cream);
   padding: 8px 12px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 
+    0 4px 0 rgba(0, 0, 0, 0.3),
+    0 6px 16px rgba(0, 0, 0, 0.5);
   align-items: center;
   gap: 6px;
+  font-family: var(--mono);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
 }
 
 @media (max-width: 1024px) {
@@ -139,17 +154,21 @@
   left: 50%;
   transform: translateX(-50%);
   pointer-events: auto;
-  background: rgba(18, 22, 20, 0.94);
+  background: var(--bg-panel);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 2px solid #F0D9A8;
-  border-radius: 12px;
+  border: 4px solid var(--gold);
+  border-radius: 8px;
   padding: 14px 18px;
-  color: #ffffff;
+  color: var(--cream);
   width: 380px;
   max-width: calc(100vw - 32px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+  box-shadow: 
+    0 8px 0 rgba(0, 0, 0, 0.3),
+    0 12px 36px rgba(0, 0, 0, 0.7),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
   z-index: 20;
+  image-rendering: pixelated;
 }
 
 @media (max-width: 768px) {
@@ -174,35 +193,42 @@
   width: 350px;
   max-width: calc(100vw - 32px);
   pointer-events: auto;
-  background: rgba(18, 22, 20, 0.92);
+  background: var(--bg-panel);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 2px solid #F0D9A8;
-  border-radius: 12px;
-  color: #ffffff;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  border: 4px solid var(--gold);
+  border-radius: 8px;
+  color: var(--cream);
+  box-shadow: 
+    0 8px 0 rgba(0, 0, 0, 0.3),
+    0 12px 36px rgba(0, 0, 0, 0.65),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   z-index: 30;
+  image-rendering: pixelated;
 }
 
 /* Desktop sidebar toggle button on the left edge of sidebar */
 .hud-sidebar-edge-toggle {
   display: block;
   position: absolute;
-  left: -38px;
+  left: -42px;
   top: 14px;
-  background: rgba(18, 22, 20, 0.95);
-  border: 2px solid #F0D9A8;
+  background: var(--wood-dark);
+  border: 3px solid var(--gold);
   border-right: none;
-  border-radius: 8px 0 0 8px;
-  color: "#F0D9A8";
+  border-radius: 6px 0 0 6px;
+  color: var(--cream);
   padding: 8px 10px;
   cursor: pointer;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 10px;
+  font-family: var(--mono);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
 }
 
 /* Mobile & Tablet Drawer Transformation */

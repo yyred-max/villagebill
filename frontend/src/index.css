@@ -1,52 +1,59 @@
+/* ════════════════════════════════════════════════════════════════════
+   VILLAGEBILL — STARDEW VALLEY INSPIRED PIXEL-ART THEME
+   Color Palette: Forest Green #183D2B, Deep Green #245638, 
+   Grass Green #579653, Sage #A6B98A, Cream #F3E8C9, Gold #DDAA54
+   ════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Stardew Valley Color Palette */
+  --forest-green: #183D2B;
+  --deep-green: #245638;
+  --grass-green: #579653;
+  --sage: #A6B98A;
+  --cream: #F3E8C9;
+  --gold: #DDAA54;
+  --wood-dark: #5d4037;
+  --wood-light: #8d6e63;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Semantic colors mapped to Stardew palette */
+  --text: #F3E8C9;
+  --text-h: #FFFFFF;
+  --text-dark: #183D2B;
+  --bg: #245638;
+  --bg-panel: rgba(93, 64, 55, 0.95);
+  --border: #DDAA54;
+  --border-light: #F3E8C9;
+  --code-bg: rgba(36, 86, 56, 0.8);
+  --accent: #579653;
+  --accent-hover: #A6B98A;
+  --accent-bg: rgba(87, 150, 83, 0.15);
+  --accent-border: rgba(87, 150, 83, 0.5);
+  --social-bg: rgba(245, 245, 220, 0.5);
+  --shadow: 
+    rgba(0, 0, 0, 0.4) 0 8px 24px -4px, 
+    rgba(0, 0, 0, 0.3) 0 4px 12px -2px;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
+  /* Pixel-art fonts */
+  --sans: 'Press Start 2P', 'Courier New', monospace;
+  --heading: 'Press Start 2P', 'Courier New', monospace;
+  --mono: 'Courier New', 'Consolas', monospace;
+
+  font: 13px/160% var(--mono);
+  letter-spacing: 0.3px;
+  color-scheme: dark;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 
   @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    font-size: 11px;
   }
 }
 
@@ -66,49 +73,126 @@ body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
-  background: #1b5e20;
+  background: var(--forest-green);
+  image-rendering: pixelated;
 }
 
 h1,
 h2 {
   font-family: var(--heading);
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-h);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
+  font-size: 20px;
+  letter-spacing: 1px;
+  margin: 16px 0;
   @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    font-size: 16px;
+    margin: 12px 0;
   }
 }
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
+  font-size: 12px;
+  line-height: 140%;
+  letter-spacing: 0.5px;
   margin: 0 0 8px;
   @media (max-width: 1024px) {
-    font-size: 20px;
+    font-size: 10px;
   }
 }
 p {
   margin: 0;
+  line-height: 150%;
 }
 
 code,
 .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--text-h);
 }
 
 code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 140%;
+  padding: 3px 6px;
   background: var(--code-bg);
+  border: 1px solid var(--border);
+}
+
+/* Pixel-art styled inputs and buttons */
+button {
+  font-family: var(--mono);
+  font-weight: 600;
+  border: 2px solid var(--border);
+  background: var(--wood-dark);
+  color: var(--cream);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  image-rendering: pixelated;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+button:hover:not(:disabled) {
+  background: var(--wood-light);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: var(--mono);
+  background: var(--code-bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(221, 170, 84, 0.3);
+}
+
+input::placeholder {
+  color: var(--sage);
+  opacity: 0.7;
+}
+
+/* Pixel-art scrollbars */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--wood-dark);
+  border: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--wood-light);
+  border: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
 }
