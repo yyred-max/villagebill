@@ -13,10 +13,13 @@
     "@near-wallet-selector/core": "^10.1.4",
     "@near-wallet-selector/meteor-wallet": "^10.1.4",
     "@near-wallet-selector/my-near-wallet": "^10.1.4",
+    "buffer": "^6.0.3",
     "near-api-js": "^6.5.1",
     "phaser": "^4.2.1",
+    "process": "^0.11.10",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "vite-plugin-node-polyfills": "^0.28.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
