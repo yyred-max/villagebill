@@ -164,22 +164,8 @@ export default class VillageScene extends Phaser.Scene {
         ease: "Sine.easeInOut",
       });
     }
-
-    // Street lights (masih procedural, sederhana)
-    const pathY = height / 2;
-    const spacing = width / 7;
-    for (let i = 1; i <= 6; i++) {
-      const x = spacing * i;
-      const pole = this.add.rectangle(x, pathY - 18, 5, 48, 0x78909c);
-      const light = this.add.circle(x, pathY - 44, 10, 0xffeb3b);
-      const glow = this.add.circle(x, pathY - 44, 16, 0xffeb3b, 0.25);
-      glow.setBlendMode(Phaser.BlendModes.ADD);
-      pole.setDepth(2);
-      light.setDepth(2);
-      glow.setDepth(2);
-      this.decorations.push(pole, light, glow);
-    }
   }
+
 
   // ─────────────────────────────────────────────
   // ANIMALS (tetap procedural 2D)
