@@ -31,7 +31,11 @@ export default class VillageScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("building", "/assets/village-logo.png");
+    // Load Kenney Tiny Town spritesheet (16x16 tiles)
+    this.load.spritesheet("tinytown", "/assets/tiny-town.png", {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
   }
 
   create() {
@@ -63,40 +67,55 @@ export default class VillageScene extends Phaser.Scene {
     }
 
     const { width, height } = this.scale;
-    const g = this.add.graphics();
-    this.terrainGraphics = g;
-    g.setDepth(0);
+    const tileSize = 32; // Scale up 16x16 tiles to 32x32 for visibility
+    
+    // Create a container for terrain tiles
+    const terrainContainer = this.add.container(0, 0);
+    terrainContainer.setDepth(0);
+    this.terrainGraphics = terrainContainer as any;
 
-    // Deep forest grass base
-    g.fillStyle(0x2e7d32, 1);
-    g.fillRect(0, 0, width, height);
+    if (!this.textures.exists("tinytown")) {
+      return; // Spritesheet not loaded yet
+    }
 
-    // Soft checker tiles for retro depth
-    g.fillStyle(0x388e3c, 0.4);
-    const tile = 32;
-    for (let x = 0; x < width; x += tile) {
-      for (let y = 0; y < height; y += tile) {
-        if ((x / tile + y / tile) % 2 === 0) {
-          g.fillRect(x, y, tile, tile);
-        }
+    // Grass base layer (frame 1 = grass tile in Kenney Tiny Town)
+    const grassFrames = [1, 2, 17, 18]; // Various grass tiles
+    for (let x = 0; x < width; x += tileSize) {
+      for (let y = 0; y < height; y += tileSize) {
+        const frame = Phaser.Math.RND.pick(grassFrames);
+        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
+        tile.setDisplaySize(tileSize, tileSize);
+        tile.setDepth(0);
+        terrainContainer.add(tile);
       }
     }
 
-    // Cobblestone / Dirt village paths
+    // Dirt path across the middle (frame 32 = dirt/path in Kenney Tiny Town)
     const pathY = height / 2;
-    g.fillStyle(0xc4a484, 0.65);
-    g.fillRect(0, pathY - 24, width, 48);
+    const pathHeight = 96;
+    const dirtFrames = [32, 33, 48, 49]; // Dirt/path tiles
+    
+    for (let x = 0; x < width; x += tileSize) {
+      for (let y = pathY - pathHeight / 2; y < pathY + pathHeight / 2; y += tileSize) {
+        const frame = Phaser.Math.RND.pick(dirtFrames);
+        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
+        tile.setDisplaySize(tileSize, tileSize);
+        tile.setDepth(0);
+        terrainContainer.add(tile);
+      }
+    }
 
-    // Path borders
-    g.fillStyle(0xa1887f, 0.5);
-    g.fillRect(0, pathY - 26, width, 3);
-    g.fillRect(0, pathY + 23, width, 3);
-
-    // Soft water pond or stream in top-left
-    g.fillStyle(0x1976d2, 0.7);
-    g.fillRoundedRect(30, 20, 160, 50, 16);
-    g.fillStyle(0x42a5f5, 0.5);
-    g.fillRoundedRect(36, 26, 148, 38, 12);
+    // Small water feature in top-left (frame 80 = water in Kenney Tiny Town)
+    const waterFrames = [80, 81, 96, 97];
+    for (let x = 30; x < 190; x += tileSize) {
+      for (let y = 20; y < 70; y += tileSize) {
+        const frame = Phaser.Math.RND.pick(waterFrames);
+        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
+        tile.setDisplaySize(tileSize, tileSize);
+        tile.setDepth(0);
+        terrainContainer.add(tile);
+      }
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -109,7 +128,12 @@ export default class VillageScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const rng = (min: number, max: number) => Phaser.Math.Between(min, max);
 
-    // Clustered Trees
+    if (!this.textures.exists("tinytown")) {
+      return; // Spritesheet not loaded yet
+    }
+
+    // Clustered Trees from Kenney pack (frames 64-67 = trees in Tiny Town)
+    const treeFrames = [64, 65, 66, 67];
     for (let i = 0; i < 14; i++) {
       const x = rng(50, width - 50);
       const y = rng(40, height - 40);
@@ -117,27 +141,23 @@ export default class VillageScene extends Phaser.Scene {
       // Avoid blocking the main road
       if (Math.abs(y - height / 2) < 60) continue;
 
-      const tree = this.add.container(x, y);
-
-      // Trunk
-      const trunk = this.add.rectangle(0, 10, 10, 22, 0x5d4037);
-      // Leaves (layered)
-      const leaves = this.add.circle(0, -6, 20, 0x1b5e20);
-      const leaves2 = this.add.circle(-10, 2, 14, 0x2e7d32);
-      const leaves3 = this.add.circle(10, 2, 14, 0x388e3c);
-
-      tree.add([trunk, leaves, leaves2, leaves3]);
+      const frame = Phaser.Math.RND.pick(treeFrames);
+      const tree = this.add.image(x, y, "tinytown", frame);
+      tree.setDisplaySize(48, 48); // Scale up for visibility
       tree.setDepth(1);
       this.decorations.push(tree);
     }
 
-    // Rocks & Wildflowers
+    // Rocks & decorative elements (frames 112-115 = rocks/bushes)
+    const rockFrames = [112, 113, 114, 115];
     for (let i = 0; i < 10; i++) {
       const x = rng(40, width - 40);
       const y = rng(40, height - 40);
       if (Math.abs(y - height / 2) < 45) continue;
 
-      const rock = this.add.ellipse(x, y, rng(12, 22), rng(8, 14), 0x78909c, 0.75);
+      const frame = Phaser.Math.RND.pick(rockFrames);
+      const rock = this.add.image(x, y, "tinytown", frame);
+      rock.setDisplaySize(24, 24);
       rock.setDepth(1);
       this.decorations.push(rock);
     }
@@ -265,18 +285,28 @@ export default class VillageScene extends Phaser.Scene {
     container.add(shadow);
 
     // Building visual
-    if (this.textures.exists("building")) {
-      const sprite = this.add.sprite(0, 0, "building");
+    if (this.textures.exists("tinytown")) {
+      // Use different house frames based on progress stage
+      // Stage 0 (Foundation): frames 128-131 (small/foundation houses)
+      // Stage 1 (Walls): frames 144-147 (medium houses)
+      // Stage 2 (Complete): frames 160-163 (complete houses)
+      let houseFrame: number;
+      if (stage === 0) {
+        houseFrame = 128 + Phaser.Math.Between(0, 3);
+      } else if (stage === 1) {
+        houseFrame = 144 + Phaser.Math.Between(0, 3);
+      } else {
+        houseFrame = 160 + Phaser.Math.Between(0, 3);
+      }
+
+      const sprite = this.add.image(0, 0, "tinytown", houseFrame);
       sprite.setDisplaySize(64, 64);
 
       if (stage === 0) {
-        sprite.setTint(0x8d6e63);
         sprite.setAlpha(0.9);
       } else if (stage === 1) {
-        sprite.setTint(0xffcc80);
         sprite.setAlpha(0.95);
       } else {
-        sprite.clearTint();
         sprite.setAlpha(1);
       }
       container.add(sprite);
