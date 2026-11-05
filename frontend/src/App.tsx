@@ -6,7 +6,8 @@
  *  - Create Group form (F2)
  *  - Add Member form (F3)
  *  - Pay Share form (F5)
- *  - Activity Feed polling (F6) ← NEW
+ *  - Activity Feed polling (F6)
+ *  - Phaser 3 Village Map (F11) ← NEW
  *  - Group list with member details + progress bar
  */
 
@@ -22,6 +23,7 @@ import {
 import AddMember from "./components/AddMember";
 import PayShare from "./components/PayShare";
 import ActivityFeed from "./components/ActivityFeed";
+import VillageMap from "./components/VillageMap";
 import "./App.css";
 
 function App() {
@@ -30,6 +32,7 @@ function App() {
 
   // Groups state
   const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupName, setGroupName] = useState("");
   const [createStatus, setCreateStatus] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -148,6 +151,15 @@ function App() {
         </div>
       )}
 
+      {/* ── Phaser 3 Village Map (F11) ────────────────────────── */}
+      <VillageMap
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        onSelectGroup={(id) => {
+          setSelectedGroupId((prev) => (prev === id ? null : id));
+        }}
+      />
+
       {/* === Authenticated sections === */}
       {accountId && selector && (
         <>
@@ -209,27 +221,45 @@ function App() {
               <p style={{ color: "var(--text)" }}>No groups yet. Create one above!</p>
             )}
 
-            {groups.map((g) => (
-              <div key={g.id} style={groupCardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <strong>
-                    #{g.id} — {g.name}
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      padding: "2px 8px",
-                      borderRadius: 4,
-                      background: g.status === "Settled" ? "#27ae60" : "var(--accent)",
-                      color: "#fff",
-                    }}
-                  >
-                    {g.status}
-                  </span>
-                </div>
-                <p style={{ fontSize: 12, color: "var(--text)", margin: "4px 0" }}>
-                  Owner: {g.owner}
-                </p>
+            {groups.map((g) => {
+              const isSelected = g.id === selectedGroupId;
+              return (
+                <div
+                  key={g.id}
+                  onClick={() => setSelectedGroupId(isSelected ? null : g.id)}
+                  style={{
+                    ...groupCardStyle,
+                    borderColor: isSelected ? "var(--accent)" : "var(--border)",
+                    boxShadow: isSelected ? "0 0 10px rgba(170, 59, 255, 0.3)" : undefined,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <strong>
+                        #{g.id} — {g.name}
+                      </strong>
+                      {isSelected && (
+                        <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>
+                          🎯 SELECTED
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        background: g.status === "Settled" ? "#27ae60" : "var(--accent)",
+                        color: "#fff",
+                      }}
+                    >
+                      {g.status}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "var(--text)", margin: "4px 0" }}>
+                    Owner: {g.owner}
+                  </p>
 
                 {/* Member list */}
                 {Object.keys(g.members).length > 0 ? (
@@ -298,8 +328,9 @@ function App() {
                     No members yet.
                   </p>
                 )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
