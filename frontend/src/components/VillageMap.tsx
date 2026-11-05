@@ -1,11 +1,8 @@
 /**
- * VillageMap.tsx — React wrapper for the Phaser 3 Village Canvas (PRD §4 F11, §6.1, §7).
+ * VillageMap.tsx — Full-Screen React wrapper for the Phaser 3 Village Canvas.
  *
- * Responsibilities:
- *  - Initializes and mounts the Phaser 3 game inside a container div.
- *  - Bridges React state (`groups`) into `VillageScene`.
- *  - Listens for building click events and notifies parent (`onSelectGroup`).
- *  - Completely cleans up the Phaser game instance on unmount to prevent leaks.
+ * Renders Phaser as a full-viewport canvas background (z-index: 0),
+ * allowing floating HUD panels to sit on top with pointer-events.
  */
 
 import { useEffect, useRef } from "react";
@@ -19,29 +16,28 @@ interface Props {
   onSelectGroup?: (groupId: number) => void;
 }
 
-export default function VillageMap({ groups, selectedGroupId, onSelectGroup }: Props) {
+export default function VillageMap({ groups, onSelectGroup }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Phaser 3 Game configuration
+    // Phaser 3 Full-Screen Game configuration
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: containerRef.current,
-      width: 600,
-      height: 260,
+      width: window.innerWidth,
+      height: window.innerHeight,
       backgroundColor: "#2e7d32",
       pixelArt: true,
       scene: [VillageScene],
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
     };
 
-    // Instantiate Phaser
     const game = new Phaser.Game(config);
     gameRef.current = game;
 
@@ -72,7 +68,7 @@ export default function VillageMap({ groups, selectedGroupId, onSelectGroup }: P
     };
   }, []); // Run once on mount
 
-  // Pass reactive group updates to the active Phaser scene
+  // Reactively sync group updates to active Phaser scene
   useEffect(() => {
     if (gameRef.current) {
       const scene = gameRef.current.scene.getScene("VillageScene") as VillageScene;
@@ -83,74 +79,18 @@ export default function VillageMap({ groups, selectedGroupId, onSelectGroup }: P
   }, [groups]);
 
   return (
-    <div style={wrapperStyle}>
-      <div style={headerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 16 }}>🎮</span>
-          <strong style={{ fontSize: 14, color: "var(--text-h)" }}>Village Map (Phaser 2D)</strong>
-        </div>
-        {selectedGroupId && (
-          <span style={selectedBadge}>
-            Selected House: #{selectedGroupId}
-          </span>
-        )}
-      </div>
-
-      <div
-        ref={containerRef}
-        style={canvasContainerStyle}
-      />
-
-      <div style={footerStyle}>
-        <span>💡 Click any building in the village to focus its project details</span>
-      </div>
-    </div>
+    <div
+      ref={containerRef}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 0,
+        overflow: "hidden",
+        pointerEvents: "auto",
+      }}
+    />
   );
 }
-
-// ── Inline styles ────────────────────────────────────────────────────
-
-const wrapperStyle: React.CSSProperties = {
-  border: "2px solid var(--border)",
-  borderRadius: 8,
-  overflow: "hidden",
-  margin: "1rem auto",
-  maxWidth: 600,
-  background: "var(--code-bg)",
-  textAlign: "left",
-};
-
-const headerStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "8px 12px",
-  borderBottom: "1px solid var(--border)",
-};
-
-const selectedBadge: React.CSSProperties = {
-  fontSize: 11,
-  padding: "2px 8px",
-  borderRadius: 4,
-  background: "var(--accent)",
-  color: "#fff",
-  fontWeight: 600,
-};
-
-const canvasContainerStyle: React.CSSProperties = {
-  width: "100%",
-  height: "260px",
-  position: "relative",
-  overflow: "hidden",
-  backgroundColor: "#2e7d32",
-};
-
-const footerStyle: React.CSSProperties = {
-  padding: "6px 12px",
-  fontSize: 11,
-  color: "var(--text)",
-  borderTop: "1px solid var(--border)",
-  display: "flex",
-  justifyContent: "space-between",
-};
-

@@ -1,14 +1,13 @@
 /**
- * App.tsx — Root component for VillageBill.
+ * App.tsx — Full-Screen Web3 Game Map with Floating HUD Panels (PRD §5, §7 F11).
  *
- * Integrates:
- *  - Wallet connect / disconnect (F1)
- *  - Create Group form (F2)
- *  - Add Member form (F3)
- *  - Pay Share form (F5)
- *  - Activity Feed polling (F6)
- *  - Phaser 3 Village Map (F11) ← NEW
- *  - Group list with member details + progress bar
+ * Layout Architecture:
+ *  - Z-Index 0: Full-Screen Interactive Phaser 3 Canvas (VillageMap)
+ *  - Z-Index 1: Floating HUD Overlay (pointer-events: none, panels: pointer-events: auto)
+ *    ├── Top-Left: Logo, Contract ID, and Wallet Controls
+ *    ├── Bottom-Left: Collapsible Live Activity Feed (10s Polling)
+ *    ├── Center-Bottom: Selected Building / Group Details Card (on house click)
+ *    └── Right: Tabbed Floating HUD Sidebar (Groups, Create, Add Member, Pay Share)
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,6 +15,7 @@ import type { WalletSelector } from "@near-wallet-selector/core";
 import { initWalletSelector, CONTRACT_ID } from "./lib/near";
 import {
   getGroups,
+  payShare,
   friendlyError,
   type Group,
 } from "./lib/contract";
@@ -26,15 +26,23 @@ import ActivityFeed from "./components/ActivityFeed";
 import VillageMap from "./components/VillageMap";
 import "./App.css";
 
-function App() {
+type SidebarTab = "groups" | "create" | "add_member" | "pay";
+
+export default function App() {
   const [selector, setSelector] = useState<WalletSelector | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
 
-  // Groups state
+  // Groups & Selection
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<SidebarTab>("groups");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // ── Wallet init ────────────────────────────────────────────────────
+  // Quick pay loading state for the Selected Group Details HUD
+  const [quickPayLoading, setQuickPayLoading] = useState(false);
+  const [quickPayMsg, setQuickPayMsg] = useState<string | null>(null);
+
+  // ── Wallet Init & Redirection Handling ──────────────────────────────
   useEffect(() => {
     initWalletSelector().then((s) => {
       setSelector(s);
@@ -55,7 +63,7 @@ function App() {
     });
   }, []);
 
-  // ── Fetch groups ───────────────────────────────────────────────────
+  // ── Fetch Groups ───────────────────────────────────────────────────
   const fetchGroups = useCallback(async () => {
     if (!selector) return;
     try {
@@ -66,12 +74,11 @@ function App() {
     }
   }, [selector]);
 
-  // Fetch on mount + when selector ready
   useEffect(() => {
     if (selector) fetchGroups();
   }, [selector, fetchGroups]);
 
-  // ── Wallet handlers ────────────────────────────────────────────────
+  // ── Wallet Handlers ────────────────────────────────────────────────
   const handleConnect = async (walletId: "meteor-wallet" | "my-near-wallet" = "meteor-wallet") => {
     if (!selector) {
       alert("Wallet selector not initialized. Please refresh.");
@@ -105,278 +112,560 @@ function App() {
     setAccountId(null);
   };
 
-  // ── Helpers ────────────────────────────────────────────────────────
-  /** Convert yoctoNEAR string to human-readable NEAR. */
+  // ── YoctoNEAR to NEAR Helper ───────────────────────────────────────
   const yoctoToNear = (yocto: string): string => {
-    const y = BigInt(yocto);
-    const whole = y / BigInt(10 ** 24);
-    const frac = y % BigInt(10 ** 24);
-    const fracStr = frac.toString().padStart(24, "0").slice(0, 4);
-    return `${whole}.${fracStr}`;
+    try {
+      const y = BigInt(yocto);
+      const whole = y / BigInt(10 ** 24);
+      const frac = y % BigInt(10 ** 24);
+      const fracStr = frac.toString().padStart(24, "0").slice(0, 4);
+      return `${whole}.${fracStr}`;
+    } catch {
+      return "0.0";
+    }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // Selected Group computation
+  const selectedGroup = selectedGroupId
+    ? groups.find((g) => g.id === selectedGroupId) ?? null
+    : null;
+
+  // Handle Quick Pay directly from the Floating Group Details card
+  const handleQuickPay = async () => {
+    if (!selector || !selectedGroup || !accountId) return;
+    const myMembership = selectedGroup.members[accountId];
+    if (!myMembership || myMembership.paid) return;
+
+    setQuickPayLoading(true);
+    setQuickPayMsg(null);
+    try {
+      await payShare(selector, selectedGroup.id, myMembership.share);
+      setQuickPayMsg("✅ Paid successfully!");
+      fetchGroups();
+    } catch (err) {
+      setQuickPayMsg(`❌ ${friendlyError(err)}`);
+    } finally {
+      setQuickPayLoading(false);
+    }
+  };
+
   return (
-    <div style={{ padding: "2rem", maxWidth: 600, margin: "0 auto", fontFamily: "var(--sans)" }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-        <img
-          src="/assets/village-logo.png"
-          alt="VillageBill"
-          style={{ width: 80, imageRendering: "pixelated" }}
-        />
-        <h1 style={{ margin: "8px 0 4px", fontSize: 32 }}>🏘️ VillageBill</h1>
-        <p style={{ fontSize: 13, color: "var(--text)" }}>
-          Split bills on-chain — <code>{CONTRACT_ID}</code>
-        </p>
-      </div>
-
-      {/* Wallet section */}
-      {accountId ? (
-        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <p>
-            Connected as: <strong>{accountId}</strong>
-          </p>
-          <button onClick={handleDisconnect} style={btnSecondary}>
-            Disconnect
-          </button>
-        </div>
-      ) : (
-        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: 13, color: "var(--text)", marginBottom: 8 }}>
-            Connect your NEAR Testnet wallet:
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => handleConnect("meteor-wallet")} style={btnPrimary}>
-              ☄️ Meteor Wallet
-            </button>
-            <button onClick={() => handleConnect("my-near-wallet")} style={btnSecondary}>
-              🌐 MyNearWallet
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Phaser 3 Village Map (F11) ────────────────────────── */}
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+      {/* ──────────────────────────────────────────────────────────── */}
+      {/* 1. FULL-SCREEN PHASER 3 VILLAGE MAP (Z-INDEX 0)              */}
+      {/* ──────────────────────────────────────────────────────────── */}
       <VillageMap
         groups={groups}
         selectedGroupId={selectedGroupId}
-        onSelectGroup={(id) => {
-          setSelectedGroupId((prev) => (prev === id ? null : id));
-        }}
+        onSelectGroup={(id) => setSelectedGroupId(id)}
       />
 
-      {/* === Authenticated sections === */}
-      {accountId && selector && (
-        <>
-          {/* ── Create Group (F2) ───────────────────────────────── */}
-          <CreateGroup
-            selector={selector}
-            accountId={accountId}
-            onSuccess={fetchGroups}
-          />
+      {/* ──────────────────────────────────────────────────────────── */}
+      {/* 2. FLOATING GAME HUD LAYER (Z-INDEX 10)                      */}
+      {/* ──────────────────────────────────────────────────────────── */}
+      <div style={hudOverlayStyle}>
+        {/* ── TOP-LEFT: HEADER & WALLET PANEL ── */}
+        <div style={topLeftHudStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <img
+              src="/assets/village-logo.png"
+              alt="VillageBill"
+              style={{ width: 44, height: 44, imageRendering: "pixelated" }}
+            />
+            <div>
+              <h1 style={{ margin: 0, fontSize: 18, color: "#F0D9A8", letterSpacing: 0.5 }}>
+                🏘️ VillageBill
+              </h1>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontFamily: "var(--mono)" }}>
+                {CONTRACT_ID}
+              </span>
+            </div>
+          </div>
 
-          {/* ── Add Member (F3) ─────────────────────────────────── */}
-          <AddMember
-            selector={selector}
-            groups={groups.filter((g) => g.owner === accountId)}
-            onSuccess={fetchGroups}
-          />
+          <div style={{ marginTop: 10, borderTop: "1px solid rgba(240, 217, 168, 0.25)", paddingTop: 8 }}>
+            {accountId ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontSize: 12 }}>
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>Player: </span>
+                  <strong style={{ color: "#27ae60", fontFamily: "var(--mono)" }}>{accountId}</strong>
+                </div>
+                <button onClick={handleDisconnect} style={miniBtnStyle}>
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(255,255,255,0.7)" }}>
+                  Connect NEAR Testnet Wallet:
+                </p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => handleConnect("meteor-wallet")} style={hudBtnPrimary}>
+                    ☄️ Meteor
+                  </button>
+                  <button onClick={() => handleConnect("my-near-wallet")} style={hudBtnSecondary}>
+                    🌐 MyNear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-          {/* ── Pay Share (F5) ─────────────────────────────────── */}
-          <PayShare
-            selector={selector}
-            accountId={accountId}
-            groups={groups}
-            onSuccess={fetchGroups}
-          />
-
-          {/* ── Activity Feed (F6) ──────────────────────────────── */}
+        {/* ── BOTTOM-LEFT: ACTIVITY FEED ── */}
+        <div style={bottomLeftHudStyle}>
           <ActivityFeed
-            selector={selector}
+            selector={selector!}
             accountId={accountId}
             onGroupsFetched={setGroups}
           />
+        </div>
 
-          {/* ── Groups list ─────────────────────────────────────── */}
-          <div style={{ ...sectionStyle, marginTop: "1rem" }}>
-            <h2 style={{ margin: "0 0 12px" }}>
-              📋 Groups ({groups.length})
-              <button
-                onClick={fetchGroups}
-                style={{ ...btnSecondary, marginLeft: 8, fontSize: 12 }}
-              >
-                Refresh
-              </button>
-            </h2>
-
-            {groups.length === 0 && (
-              <p style={{ color: "var(--text)" }}>No groups yet. Create one above!</p>
-            )}
-
-            {groups.map((g) => {
-              const isSelected = g.id === selectedGroupId;
-              return (
-                <div
-                  key={g.id}
-                  onClick={() => setSelectedGroupId(isSelected ? null : g.id)}
+        {/* ── CENTER-BOTTOM: SELECTED GROUP DETAILS POPUP ── */}
+        {selectedGroup && (
+          <div style={selectedGroupCardStyle}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 20 }}>🏡</span>
+                <strong style={{ fontSize: 16, color: "#F0D9A8" }}>
+                  #{selectedGroup.id} {selectedGroup.name}
+                </strong>
+                <span
                   style={{
-                    ...groupCardStyle,
-                    borderColor: isSelected ? "var(--accent)" : "var(--border)",
-                    boxShadow: isSelected ? "0 0 10px rgba(170, 59, 255, 0.3)" : undefined,
-                    cursor: "pointer",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    background: selectedGroup.status === "Settled" ? "#27ae60" : "#e67e22",
+                    color: "#fff",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <strong>
-                        #{g.id} — {g.name}
-                      </strong>
-                      {isSelected && (
-                        <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700 }}>
-                          🎯 SELECTED
-                        </span>
-                      )}
+                  {selectedGroup.status}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedGroupId(null)}
+                style={closeBtnStyle}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
+              Owner: <span style={{ fontFamily: "var(--mono)" }}>{selectedGroup.owner}</span>
+            </p>
+
+            {/* Progress calculation */}
+            {(() => {
+              const members = Object.values(selectedGroup.members);
+              const paidCount = members.filter((m) => m.paid).length;
+              const totalCount = members.length;
+              const pct = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+              const myMembership = accountId ? selectedGroup.members[accountId] : null;
+
+              return (
+                <>
+                  <div style={{ margin: "6px 0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#F0D9A8", marginBottom: 3 }}>
+                      <span>Building Construction Progress</span>
+                      <span>{paidCount}/{totalCount} Paid ({pct}%)</span>
                     </div>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        background: g.status === "Settled" ? "#27ae60" : "var(--accent)",
-                        color: "#fff",
-                      }}
-                    >
-                      {g.status}
-                    </span>
+                    <div style={progressBgStyle}>
+                      <div
+                        style={{
+                          height: "100%",
+                          borderRadius: 3,
+                          transition: "width 0.3s ease",
+                          width: `${pct}%`,
+                          background: pct === 100 ? "#27ae60" : "linear-gradient(90deg, #aa3bff, #F0D9A8)",
+                        }}
+                      />
+                    </div>
                   </div>
-                  <p style={{ fontSize: 12, color: "var(--text)", margin: "4px 0" }}>
-                    Owner: {g.owner}
-                  </p>
 
-                {/* Member list */}
-                {Object.keys(g.members).length > 0 ? (
-                  <>
-                    {/* Progress bar */}
-                    {(() => {
-                      const entries = Object.values(g.members);
-                      const paidCount = entries.filter((m) => m.paid).length;
-                      const total = entries.length;
-                      const pct = total > 0 ? Math.round((paidCount / total) * 100) : 0;
-                      return (
-                        <div style={{ margin: "8px 0 6px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text)", marginBottom: 3 }}>
-                            <span>{paidCount}/{total} paid</span>
-                            <span>{pct}%</span>
-                          </div>
-                          <div style={progressBg}>
-                            <div style={{ height: "100%", borderRadius: 3, transition: "width 0.3s", width: `${pct}%`, background: pct === 100 ? "#27ae60" : "var(--accent)" }} />
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    <ul style={{ margin: "6px 0 0", padding: 0, listStyle: "none" }}>
-                      {Object.entries(g.members).map(([acct, m]) => (
-                        <li
-                          key={acct}
-                          style={{
-                            fontSize: 13,
-                            padding: "5px 0",
-                            borderTop: "1px solid var(--border)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span>
-                            {m.paid ? "✅" : "⏳"} {acct}
-                            {acct === accountId && (
-                              <span style={{ fontSize: 10, marginLeft: 4, color: "var(--accent)" }}>(you)</span>
-                            )}
-                          </span>
-                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                  {/* Members list */}
+                  <div style={{ maxHeight: 90, overflowY: "auto", margin: "6px 0" }}>
+                    {members.length === 0 ? (
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>No members added yet.</p>
+                    ) : (
+                      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                        {Object.entries(selectedGroup.members).map(([memId, m]) => (
+                          <li
+                            key={memId}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontSize: 11,
+                              padding: "2px 0",
+                              borderBottom: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            <span>
+                              {m.paid ? "✅" : "⏳"} {memId} {memId === accountId && "(you)"}
+                            </span>
+                            <span style={{ fontFamily: "var(--mono)" }}>
                               {yoctoToNear(m.share)} Ⓝ
                             </span>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                padding: "1px 6px",
-                                borderRadius: 3,
-                                background: m.paid ? "#27ae60" : "#e67e22",
-                                color: "#fff",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {m.paid ? "PAID" : "DUE"}
-                            </span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 12, color: "var(--text)", marginTop: 4 }}>
-                    No members yet.
-                  </p>
-                )}
-                </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Quick pay if logged-in user owes money */}
+                  {myMembership && !myMembership.paid && (
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        onClick={handleQuickPay}
+                        disabled={quickPayLoading}
+                        style={quickPayBtnStyle}
+                      >
+                        {quickPayLoading
+                          ? "Processing Payment…"
+                          : `💸 Pay My Share (${yoctoToNear(myMembership.share)} Ⓝ)`}
+                      </button>
+                      {quickPayMsg && (
+                        <p style={{ margin: "4px 0 0", fontSize: 11, textAlign: "center" }}>
+                          {quickPayMsg}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
               );
-            })}
+            })()}
           </div>
-        </>
-      )}
+        )}
+
+        {/* ── RIGHT-SIDE: FLOATING HUD SIDEBAR ── */}
+        <div
+          style={{
+            ...sidebarContainerStyle,
+            transform: isSidebarOpen ? "translateX(0)" : "translateX(calc(100% + 20px))",
+          }}
+        >
+          {/* Toggle Tab Button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={sidebarToggleBtnStyle}
+            title={isSidebarOpen ? "Collapse Sidebar" : "Open Sidebar"}
+          >
+            {isSidebarOpen ? "▶" : "◀ HUD"}
+          </button>
+
+          {/* Sidebar Navigation Tabs */}
+          <div style={tabBarStyle}>
+            <button
+              onClick={() => setActiveTab("groups")}
+              style={activeTab === "groups" ? activeTabStyle : tabStyle}
+            >
+              📋 Groups
+            </button>
+            <button
+              onClick={() => setActiveTab("create")}
+              style={activeTab === "create" ? activeTabStyle : tabStyle}
+            >
+              🏠 Create
+            </button>
+            <button
+              onClick={() => setActiveTab("add_member")}
+              style={activeTab === "add_member" ? activeTabStyle : tabStyle}
+            >
+              👥 Member
+            </button>
+            <button
+              onClick={() => setActiveTab("pay")}
+              style={activeTab === "pay" ? activeTabStyle : tabStyle}
+            >
+              💸 Pay
+            </button>
+          </div>
+
+          {/* Sidebar Body Content */}
+          <div style={sidebarBodyStyle}>
+            {activeTab === "groups" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <strong style={{ fontSize: 13, color: "#F0D9A8" }}>
+                    Active Village Projects ({groups.length})
+                  </strong>
+                  <button onClick={fetchGroups} style={miniBtnStyle}>
+                    ↻ Refresh
+                  </button>
+                </div>
+
+                {groups.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                    No village projects yet. Click 🏠 Create above!
+                  </p>
+                ) : (
+                  groups.map((g) => {
+                    const isSelected = g.id === selectedGroupId;
+                    return (
+                      <div
+                        key={g.id}
+                        onClick={() => setSelectedGroupId(isSelected ? null : g.id)}
+                        style={{
+                          ...groupItemStyle,
+                          borderColor: isSelected ? "#F0D9A8" : "rgba(255,255,255,0.15)",
+                          background: isSelected ? "rgba(240, 217, 168, 0.15)" : "rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <strong style={{ fontSize: 13, color: "#fff" }}>
+                            #{g.id} {g.name}
+                          </strong>
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: "1px 5px",
+                              borderRadius: 3,
+                              background: g.status === "Settled" ? "#27ae60" : "#e67e22",
+                              color: "#fff",
+                            }}
+                          >
+                            {g.status}
+                          </span>
+                        </div>
+                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                          Owner: {g.owner}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {activeTab === "create" && (
+              <CreateGroup
+                selector={selector}
+                accountId={accountId}
+                onSuccess={() => {
+                  fetchGroups();
+                  setActiveTab("groups");
+                }}
+                embedded
+              />
+            )}
+
+            {activeTab === "add_member" && (
+              <AddMember
+                selector={selector!}
+                groups={groups.filter((g) => g.owner === accountId)}
+                onSuccess={() => {
+                  fetchGroups();
+                  setActiveTab("groups");
+                }}
+                embedded
+              />
+            )}
+
+            {activeTab === "pay" && (
+              <PayShare
+                selector={selector!}
+                accountId={accountId || ""}
+                groups={groups}
+                onSuccess={() => {
+                  fetchGroups();
+                  setActiveTab("groups");
+                }}
+                embedded
+              />
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ── Shared inline styles ─────────────────────────────────────────────
+// ── FLOATING HUD STYLES ──────────────────────────────────────────────
 
-const btnPrimary: React.CSSProperties = {
-  padding: "10px 20px",
-  borderRadius: 6,
-  border: "none",
-  background: "var(--accent)",
-  color: "#fff",
-  fontWeight: 600,
-  cursor: "pointer",
-  fontSize: 15,
-};
-
-const btnSecondary: React.CSSProperties = {
-  padding: "6px 14px",
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  background: "transparent",
-  color: "var(--text-h)",
-  cursor: "pointer",
-  fontSize: 14,
-};
-
-const sectionStyle: React.CSSProperties = {
-  border: "2px solid var(--border)",
-  borderRadius: 8,
-  padding: "1.25rem",
-  margin: "1rem auto",
-  maxWidth: 420,
-  textAlign: "left",
-};
-
-const groupCardStyle: React.CSSProperties = {
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  padding: "10px 14px",
-  marginBottom: 8,
-  background: "var(--code-bg)",
-};
-
-const progressBg: React.CSSProperties = {
+const hudOverlayStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
   width: "100%",
-  height: 6,
-  borderRadius: 3,
-  background: "var(--border)",
+  height: "100%",
+  pointerEvents: "none",
+  zIndex: 10,
+  display: "flex",
+  justifyContent: "space-between",
+  padding: 16,
+  boxSizing: "border-box",
+};
+
+const topLeftHudStyle: React.CSSProperties = {
+  pointerEvents: "auto",
+  background: "rgba(18, 22, 20, 0.88)",
+  backdropFilter: "blur(12px)",
+  border: "2px solid #F0D9A8",
+  borderRadius: 12,
+  padding: "10px 14px",
+  color: "#ffffff",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.45)",
+  maxWidth: 290,
+  alignSelf: "flex-start",
+};
+
+const bottomLeftHudStyle: React.CSSProperties = {
+  position: "absolute",
+  bottom: 16,
+  left: 16,
+  pointerEvents: "auto",
+};
+
+const selectedGroupCardStyle: React.CSSProperties = {
+  position: "absolute",
+  bottom: 24,
+  left: "50%",
+  transform: "translateX(-50%)",
+  pointerEvents: "auto",
+  background: "rgba(18, 22, 20, 0.92)",
+  backdropFilter: "blur(14px)",
+  border: "2px solid #F0D9A8",
+  borderRadius: 12,
+  padding: "14px 18px",
+  color: "#ffffff",
+  width: 360,
+  maxWidth: "calc(100vw - 32px)",
+  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.55)",
+  animation: "fadeIn 0.2s ease-in-out",
+};
+
+const sidebarContainerStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 16,
+  right: 16,
+  bottom: 16,
+  width: 350,
+  maxWidth: "calc(100vw - 32px)",
+  pointerEvents: "auto",
+  background: "rgba(18, 22, 20, 0.90)",
+  backdropFilter: "blur(14px)",
+  border: "2px solid #F0D9A8",
+  borderRadius: 12,
+  color: "#ffffff",
+  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.5)",
+  display: "flex",
+  flexDirection: "column",
+  transition: "transform 0.25s ease",
   overflow: "hidden",
 };
 
-export default App;
+const sidebarToggleBtnStyle: React.CSSProperties = {
+  position: "absolute",
+  left: -38,
+  top: 14,
+  background: "rgba(18, 22, 20, 0.92)",
+  border: "2px solid #F0D9A8",
+  borderRight: "none",
+  borderRadius: "8px 0 0 8px",
+  color: "#F0D9A8",
+  padding: "8px 10px",
+  cursor: "pointer",
+  fontWeight: 700,
+  fontSize: 11,
+};
+
+const tabBarStyle: React.CSSProperties = {
+  display: "flex",
+  borderBottom: "1px solid rgba(240, 217, 168, 0.25)",
+  background: "rgba(0, 0, 0, 0.3)",
+};
+
+const tabStyle: React.CSSProperties = {
+  flex: 1,
+  padding: "10px 4px",
+  background: "transparent",
+  border: "none",
+  color: "rgba(255, 255, 255, 0.65)",
+  cursor: "pointer",
+  fontSize: 11,
+  fontWeight: 600,
+  transition: "all 0.15s ease",
+};
+
+const activeTabStyle: React.CSSProperties = {
+  ...tabStyle,
+  color: "#F0D9A8",
+  background: "rgba(240, 217, 168, 0.12)",
+  borderBottom: "2px solid #F0D9A8",
+};
+
+const sidebarBodyStyle: React.CSSProperties = {
+  flex: 1,
+  overflowY: "auto",
+  padding: 14,
+};
+
+const groupItemStyle: React.CSSProperties = {
+  border: "1px solid rgba(255, 255, 255, 0.15)",
+  borderRadius: 8,
+  padding: "8px 10px",
+  marginBottom: 8,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+};
+
+const progressBgStyle: React.CSSProperties = {
+  width: "100%",
+  height: 6,
+  borderRadius: 3,
+  background: "rgba(255, 255, 255, 0.15)",
+  overflow: "hidden",
+};
+
+const hudBtnPrimary: React.CSSProperties = {
+  padding: "6px 12px",
+  borderRadius: 6,
+  border: "none",
+  background: "#aa3bff",
+  color: "#fff",
+  fontWeight: 600,
+  fontSize: 12,
+  cursor: "pointer",
+};
+
+const hudBtnSecondary: React.CSSProperties = {
+  padding: "6px 12px",
+  borderRadius: 6,
+  border: "1px solid rgba(240, 217, 168, 0.4)",
+  background: "rgba(255, 255, 255, 0.08)",
+  color: "#fff",
+  fontWeight: 600,
+  fontSize: 12,
+  cursor: "pointer",
+};
+
+const miniBtnStyle: React.CSSProperties = {
+  padding: "2px 8px",
+  borderRadius: 4,
+  border: "1px solid rgba(240, 217, 168, 0.4)",
+  background: "rgba(255, 255, 255, 0.1)",
+  color: "#F0D9A8",
+  fontSize: 10,
+  cursor: "pointer",
+};
+
+const closeBtnStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  color: "#F0D9A8",
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const quickPayBtnStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "none",
+  background: "#27ae60",
+  color: "#fff",
+  fontWeight: 700,
+  fontSize: 12,
+  cursor: "pointer",
+};

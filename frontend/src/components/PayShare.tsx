@@ -30,9 +30,10 @@ interface Props {
   accountId: string;
   groups: Group[];
   onSuccess: () => void;
+  embedded?: boolean;
 }
 
-export default function PayShare({ selector, accountId, groups, onSuccess }: Props) {
+export default function PayShare({ selector, accountId, groups, onSuccess, embedded }: Props) {
   const [groupId, setGroupId] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export default function PayShare({ selector, accountId, groups, onSuccess }: Pro
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={embedded ? embeddedContainerStyle : containerStyle}>
       <h2 style={{ margin: "0 0 12px" }}>💸 Pay Share</h2>
 
       {memberGroups.length === 0 ? (
@@ -203,6 +204,12 @@ const containerStyle: React.CSSProperties = {
   padding: "1.25rem",
   margin: "1rem auto",
   maxWidth: 420,
+  textAlign: "left",
+};
+
+const embeddedContainerStyle: React.CSSProperties = {
+  padding: "0.5rem 0",
+  margin: 0,
   textAlign: "left",
 };
 

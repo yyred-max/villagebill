@@ -25,9 +25,10 @@ interface Props {
   selector: WalletSelector;
   groups: Group[];
   onSuccess: () => void;
+  embedded?: boolean;
 }
 
-export default function AddMember({ selector, groups, onSuccess }: Props) {
+export default function AddMember({ selector, groups, onSuccess, embedded }: Props) {
   const [groupId, setGroupId] = useState<string>("");
   const [member, setMember] = useState("");
   const [share, setShare] = useState("");
@@ -78,7 +79,7 @@ export default function AddMember({ selector, groups, onSuccess }: Props) {
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={embedded ? embeddedContainerStyle : containerStyle}>
       <h2 style={{ margin: "0 0 12px" }}>👥 Add Member</h2>
 
       <form onSubmit={handleSubmit} style={formStyle}>
@@ -146,6 +147,12 @@ const containerStyle: React.CSSProperties = {
   padding: "1.25rem",
   margin: "1rem auto",
   maxWidth: 420,
+  textAlign: "left",
+};
+
+const embeddedContainerStyle: React.CSSProperties = {
+  padding: "0.5rem 0",
+  margin: 0,
   textAlign: "left",
 };
 

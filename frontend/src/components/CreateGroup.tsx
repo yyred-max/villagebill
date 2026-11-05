@@ -12,9 +12,10 @@ interface Props {
   selector: WalletSelector | null;
   accountId: string | null;
   onSuccess: () => void;
+  embedded?: boolean;
 }
 
-export default function CreateGroup({ selector, accountId, onSuccess }: Props) {
+export default function CreateGroup({ selector, accountId, onSuccess, embedded }: Props) {
   const [groupName, setGroupName] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export default function CreateGroup({ selector, accountId, onSuccess }: Props) {
   };
 
   return (
-    <div style={sectionStyle}>
+    <div style={embedded ? embeddedSectionStyle : sectionStyle}>
       <h2 style={{ margin: "0 0 12px" }}>🏠 Create Group</h2>
       <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8 }}>
         <input
@@ -84,6 +85,12 @@ const sectionStyle: React.CSSProperties = {
   padding: "1.25rem",
   margin: "1rem auto",
   maxWidth: 420,
+  textAlign: "left",
+};
+
+const embeddedSectionStyle: React.CSSProperties = {
+  padding: "0.5rem 0",
+  margin: 0,
   textAlign: "left",
 };
 

@@ -49,6 +49,7 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const prevGroupsRef = useRef<Group[] | null>(null);
   const isInitialRun = useRef(true);
 
@@ -226,27 +227,34 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
     <div style={containerStyle}>
       <div style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <h2 style={{ margin: 0, fontSize: 18, color: "var(--text-h)" }}>⚡ Village Activity Feed</h2>
+          <h2 style={{ margin: 0, fontSize: 15, color: "#F0D9A8" }}>⚡ Village Activity</h2>
           <span style={livePulseBadge}>
             <span style={pulseDot(isPolling)} />
-            {isPolling ? "SYNCING..." : "LIVE (10s)"}
+            {isPolling ? "SYNC" : "10s"}
           </span>
         </div>
-        <span style={{ fontSize: 11, color: "var(--text)", fontFamily: "var(--mono)" }}>
-          Updated {lastUpdated.toLocaleTimeString()}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontFamily: "var(--mono)" }}>
+            {lastUpdated.toLocaleTimeString()}
+          </span>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={collapseBtnStyle}
+            title={isCollapsed ? "Expand Feed" : "Collapse Feed"}
+          >
+            {isCollapsed ? "▲" : "▼"}
+          </button>
+        </div>
       </div>
 
-      <p style={{ fontSize: 12, color: "var(--text)", margin: "0 0 10px" }}>
-        Real-time on-chain logs polled from testnet contract.
-      </p>
-
-      {activities.length === 0 ? (
-        <div style={{ padding: "16px", textAlign: "center", color: "var(--text)", fontSize: 13 }}>
-          Listening for village events...
-        </div>
-      ) : (
-        <div style={listStyle}>
+      {!isCollapsed && (
+        <>
+          {activities.length === 0 ? (
+            <div style={{ padding: "12px", textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 12 }}>
+              Listening for village events...
+            </div>
+          ) : (
+            <div style={listStyle}>
           {activities.map((item) => {
             const isRelatedToMe =
               accountId &&
@@ -281,7 +289,9 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
               </div>
             );
           })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -290,12 +300,26 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
 // ── Styles ────────────────────────────────────────────────────────────
 
 const containerStyle: React.CSSProperties = {
-  border: "2px solid var(--border)",
-  borderRadius: 8,
-  padding: "1.25rem",
-  margin: "1rem auto",
-  maxWidth: 420,
-  textAlign: "left",
+  background: "rgba(18, 22, 20, 0.88)",
+  backdropFilter: "blur(12px)",
+  border: "2px solid #F0D9A8",
+  borderRadius: 12,
+  padding: "0.85rem 1rem",
+  width: "320px",
+  maxWidth: "calc(100vw - 32px)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.45)",
+  color: "#ffffff",
+  pointerEvents: "auto",
+};
+
+const collapseBtnStyle: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.1)",
+  border: "1px solid rgba(240, 217, 168, 0.5)",
+  color: "#F0D9A8",
+  borderRadius: 4,
+  padding: "1px 6px",
+  cursor: "pointer",
+  fontSize: 10,
 };
 
 const headerStyle: React.CSSProperties = {
@@ -333,17 +357,19 @@ const pulseDot = (active: boolean): React.CSSProperties => ({
 const listStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 8,
-  maxHeight: 280,
+  gap: 6,
+  maxHeight: 180,
   overflowY: "auto",
   paddingRight: 4,
+  marginTop: 6,
 };
 
 const itemCardStyle: React.CSSProperties = {
-  border: "1px solid var(--border)",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
   borderRadius: 6,
-  padding: "8px 10px",
+  padding: "6px 8px",
   transition: "all 0.2s ease",
+  background: "rgba(0, 0, 0, 0.3)",
 };
 
 const badgeStyle = (type: ActivityItem["type"]): React.CSSProperties => {
