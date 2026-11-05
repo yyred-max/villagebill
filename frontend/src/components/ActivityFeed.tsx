@@ -49,7 +49,7 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth <= 768);
   const prevGroupsRef = useRef<Group[] | null>(null);
   const isInitialRun = useRef(true);
 
@@ -304,9 +304,10 @@ const containerStyle: React.CSSProperties = {
   backdropFilter: "blur(12px)",
   border: "2px solid #F0D9A8",
   borderRadius: 12,
-  padding: "0.85rem 1rem",
-  width: "320px",
-  maxWidth: "calc(100vw - 32px)",
+  padding: "0.75rem 0.9rem",
+  width: "auto",
+  minWidth: 240,
+  maxWidth: "min(340px, calc(100vw - 24px))",
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.45)",
   color: "#ffffff",
   pointerEvents: "auto",

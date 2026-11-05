@@ -209,13 +209,16 @@ export default class VillageScene extends Phaser.Scene {
       return;
     }
 
-    // Available width accounts for left HUD & right sidebar space
-    const usableWidth = Math.max(300, width - 420); // space left of the right sidebar
-    const cols = Math.min(4, Math.max(1, Math.floor(usableWidth / 220)));
+    // Responsive layout: on mobile (width <= 1024), sidebar is a drawer so full screen is available
+    const isMobile = width <= 1024;
+    const usableWidth = isMobile ? Math.max(260, width - 40) : Math.max(300, width - 400);
+    const cols = isMobile
+      ? Math.min(2, Math.max(1, Math.floor(usableWidth / 150)))
+      : Math.min(4, Math.max(1, Math.floor(usableWidth / 220)));
     const cellWidth = usableWidth / cols;
-    const startX = 60;
-    const startY = 120;
-    const rowHeight = 160;
+    const startX = isMobile ? (width - cols * cellWidth) / 2 : 50;
+    const startY = isMobile ? 100 : 120;
+    const rowHeight = isMobile ? 140 : 160;
 
     this.groups.forEach((group, index) => {
       const col = index % cols;

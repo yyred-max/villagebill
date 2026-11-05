@@ -1,13 +1,14 @@
 /**
- * App.tsx — Full-Screen Web3 Game Map with Floating HUD Panels (PRD §5, §7 F11).
+ * App.tsx — Full-Screen Web3 Game Map with Responsive Floating HUD (PRD §5, §7 F11).
  *
- * Layout Architecture:
- *  - Z-Index 0: Full-Screen Interactive Phaser 3 Canvas (VillageMap)
- *  - Z-Index 1: Floating HUD Overlay (pointer-events: none, panels: pointer-events: auto)
- *    ├── Top-Left: Logo, Contract ID, and Wallet Controls
- *    ├── Bottom-Left: Collapsible Live Activity Feed (10s Polling)
- *    ├── Center-Bottom: Selected Building / Group Details Card (on house click)
- *    └── Right: Tabbed Floating HUD Sidebar (Groups, Create, Add Member, Pay Share)
+ * Responsive HUD Architecture:
+ *  - Full-Screen Phaser 3 Canvas at z-index: 0
+ *  - Responsive HUD Overlay at z-index: 10 (pointer-events: none, panels: pointer-events: auto)
+ *  - Top-Left: Scaled Logo, Contract ID, and Wallet Controls
+ *  - Top-Right: Mobile Hamburger Button (☰ HUD) to toggle drawer
+ *  - Bottom-Left: Collapsible Activity Feed (auto-collapsed on mobile screens)
+ *  - Center-Bottom: Selected Building Details Card
+ *  - Right-Side: Floating Sidebar on Desktop, Slide-In Drawer on Mobile (<1024px)
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -36,7 +37,11 @@ export default function App() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>("groups");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Responsive sidebar: default open on desktop (>1024px), closed on mobile/tablet
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    return typeof window !== "undefined" ? window.innerWidth > 1024 : true;
+  });
 
   // Quick pay loading state for the Selected Group Details HUD
   const [quickPayLoading, setQuickPayLoading] = useState(false);
@@ -163,40 +168,42 @@ export default function App() {
       {/* ──────────────────────────────────────────────────────────── */}
       {/* 2. FLOATING GAME HUD LAYER (Z-INDEX 10)                      */}
       {/* ──────────────────────────────────────────────────────────── */}
-      <div style={hudOverlayStyle}>
+      <div className="game-hud-overlay">
         {/* ── TOP-LEFT: HEADER & WALLET PANEL ── */}
-        <div style={topLeftHudStyle}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="hud-top-left">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <img
               src="/assets/village-logo.png"
               alt="VillageBill"
-              style={{ width: 44, height: 44, imageRendering: "pixelated" }}
+              className="logo-img"
             />
             <div>
-              <h1 style={{ margin: 0, fontSize: 18, color: "#F0D9A8", letterSpacing: 0.5 }}>
+              <h1 className="title-text">
                 🏘️ VillageBill
               </h1>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontFamily: "var(--mono)" }}>
+              <span className="contract-pill" title={CONTRACT_ID}>
                 {CONTRACT_ID}
               </span>
             </div>
           </div>
 
-          <div style={{ marginTop: 10, borderTop: "1px solid rgba(240, 217, 168, 0.25)", paddingTop: 8 }}>
+          <div style={{ marginTop: 8, borderTop: "1px solid rgba(240, 217, 168, 0.25)", paddingTop: 6 }}>
             {accountId ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ fontSize: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                <div style={{ fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <span style={{ color: "rgba(255,255,255,0.6)" }}>Player: </span>
-                  <strong style={{ color: "#27ae60", fontFamily: "var(--mono)" }}>{accountId}</strong>
+                  <strong style={{ color: "#27ae60", fontFamily: "var(--mono)" }}>
+                    {accountId.length > 16 ? `${accountId.slice(0, 14)}…` : accountId}
+                  </strong>
                 </div>
                 <button onClick={handleDisconnect} style={miniBtnStyle}>
-                  Disconnect
+                  Exit
                 </button>
               </div>
             ) : (
               <div>
-                <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(255,255,255,0.7)" }}>
-                  Connect NEAR Testnet Wallet:
+                <p style={{ margin: "0 0 4px", fontSize: 10, color: "rgba(255,255,255,0.7)" }}>
+                  Connect NEAR Testnet:
                 </p>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button onClick={() => handleConnect("meteor-wallet")} style={hudBtnPrimary}>
@@ -211,8 +218,25 @@ export default function App() {
           </div>
         </div>
 
+        {/* ── MOBILE HAMBURGER BUTTON (TOP-RIGHT) ── */}
+        <button
+          className="hud-hamburger-btn"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          title="Toggle Navigation Menu"
+        >
+          {isSidebarOpen ? "✕ Close" : "☰ HUD"}
+        </button>
+
+        {/* ── MOBILE BACKDROP OVERLAY ── */}
+        {isSidebarOpen && (
+          <div
+            className="hud-mobile-backdrop"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* ── BOTTOM-LEFT: ACTIVITY FEED ── */}
-        <div style={bottomLeftHudStyle}>
+        <div className="hud-bottom-left">
           <ActivityFeed
             selector={selector!}
             accountId={accountId}
@@ -222,18 +246,18 @@ export default function App() {
 
         {/* ── CENTER-BOTTOM: SELECTED GROUP DETAILS POPUP ── */}
         {selectedGroup && (
-          <div style={selectedGroupCardStyle}>
+          <div className="hud-selected-card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 20 }}>🏡</span>
-                <strong style={{ fontSize: 16, color: "#F0D9A8" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 18 }}>🏡</span>
+                <strong style={{ fontSize: 15, color: "#F0D9A8" }}>
                   #{selectedGroup.id} {selectedGroup.name}
                 </strong>
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: 700,
-                    padding: "2px 6px",
+                    padding: "2px 5px",
                     borderRadius: 4,
                     background: selectedGroup.status === "Settled" ? "#27ae60" : "#e67e22",
                     color: "#fff",
@@ -266,8 +290,8 @@ export default function App() {
               return (
                 <>
                   <div style={{ margin: "6px 0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#F0D9A8", marginBottom: 3 }}>
-                      <span>Building Construction Progress</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#F0D9A8", marginBottom: 2 }}>
+                      <span>Progress</span>
                       <span>{paidCount}/{totalCount} Paid ({pct}%)</span>
                     </div>
                     <div style={progressBgStyle}>
@@ -284,7 +308,7 @@ export default function App() {
                   </div>
 
                   {/* Members list */}
-                  <div style={{ maxHeight: 90, overflowY: "auto", margin: "6px 0" }}>
+                  <div style={{ maxHeight: 85, overflowY: "auto", margin: "6px 0" }}>
                     {members.length === 0 ? (
                       <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>No members added yet.</p>
                     ) : (
@@ -314,7 +338,7 @@ export default function App() {
 
                   {/* Quick pay if logged-in user owes money */}
                   {myMembership && !myMembership.paid && (
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ marginTop: 6 }}>
                       <button
                         onClick={handleQuickPay}
                         disabled={quickPayLoading}
@@ -325,7 +349,7 @@ export default function App() {
                           : `💸 Pay My Share (${yoctoToNear(myMembership.share)} Ⓝ)`}
                       </button>
                       {quickPayMsg && (
-                        <p style={{ margin: "4px 0 0", fontSize: 11, textAlign: "center" }}>
+                        <p style={{ margin: "4px 0 0", fontSize: 10, textAlign: "center" }}>
                           {quickPayMsg}
                         </p>
                       )}
@@ -337,17 +361,17 @@ export default function App() {
           </div>
         )}
 
-        {/* ── RIGHT-SIDE: FLOATING HUD SIDEBAR ── */}
+        {/* ── RIGHT-SIDE: FLOATING HUD SIDEBAR / MOBILE DRAWER ── */}
         <div
+          className="hud-sidebar-container"
           style={{
-            ...sidebarContainerStyle,
             transform: isSidebarOpen ? "translateX(0)" : "translateX(calc(100% + 20px))",
           }}
         >
-          {/* Toggle Tab Button */}
+          {/* Desktop Left Edge Toggle Button */}
           <button
+            className="hud-sidebar-edge-toggle"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            style={sidebarToggleBtnStyle}
             title={isSidebarOpen ? "Collapse Sidebar" : "Open Sidebar"}
           >
             {isSidebarOpen ? "▶" : "◀ HUD"}
@@ -394,47 +418,47 @@ export default function App() {
                   </button>
                 </div>
 
-                {groups.length === 0 ? (
+                {groups.length === 0 && (
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
                     No village projects yet. Click 🏠 Create above!
                   </p>
-                ) : (
-                  groups.map((g) => {
-                    const isSelected = g.id === selectedGroupId;
-                    return (
-                      <div
-                        key={g.id}
-                        onClick={() => setSelectedGroupId(isSelected ? null : g.id)}
-                        style={{
-                          ...groupItemStyle,
-                          borderColor: isSelected ? "#F0D9A8" : "rgba(255,255,255,0.15)",
-                          background: isSelected ? "rgba(240, 217, 168, 0.15)" : "rgba(0,0,0,0.3)",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <strong style={{ fontSize: 13, color: "#fff" }}>
-                            #{g.id} {g.name}
-                          </strong>
-                          <span
-                            style={{
-                              fontSize: 9,
-                              fontWeight: 700,
-                              padding: "1px 5px",
-                              borderRadius: 3,
-                              background: g.status === "Settled" ? "#27ae60" : "#e67e22",
-                              color: "#fff",
-                            }}
-                          >
-                            {g.status}
-                          </span>
-                        </div>
-                        <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
-                          Owner: {g.owner}
-                        </p>
-                      </div>
-                    );
-                  })
                 )}
+
+                {groups.map((g) => {
+                  const isSelected = g.id === selectedGroupId;
+                  return (
+                    <div
+                      key={g.id}
+                      onClick={() => setSelectedGroupId(isSelected ? null : g.id)}
+                      style={{
+                        ...groupItemStyle,
+                        borderColor: isSelected ? "#F0D9A8" : "rgba(255,255,255,0.15)",
+                        background: isSelected ? "rgba(240, 217, 168, 0.15)" : "rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <strong style={{ fontSize: 13, color: "#fff" }}>
+                          #{g.id} {g.name}
+                        </strong>
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: "1px 5px",
+                            borderRadius: 3,
+                            background: g.status === "Settled" ? "#27ae60" : "#e67e22",
+                            color: "#fff",
+                          }}
+                        >
+                          {g.status}
+                        </span>
+                      </div>
+                      <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                        Owner: {g.owner}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -481,94 +505,7 @@ export default function App() {
   );
 }
 
-// ── FLOATING HUD STYLES ──────────────────────────────────────────────
-
-const hudOverlayStyle: React.CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
-  pointerEvents: "none",
-  zIndex: 10,
-  display: "flex",
-  justifyContent: "space-between",
-  padding: 16,
-  boxSizing: "border-box",
-};
-
-const topLeftHudStyle: React.CSSProperties = {
-  pointerEvents: "auto",
-  background: "rgba(18, 22, 20, 0.88)",
-  backdropFilter: "blur(12px)",
-  border: "2px solid #F0D9A8",
-  borderRadius: 12,
-  padding: "10px 14px",
-  color: "#ffffff",
-  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.45)",
-  maxWidth: 290,
-  alignSelf: "flex-start",
-};
-
-const bottomLeftHudStyle: React.CSSProperties = {
-  position: "absolute",
-  bottom: 16,
-  left: 16,
-  pointerEvents: "auto",
-};
-
-const selectedGroupCardStyle: React.CSSProperties = {
-  position: "absolute",
-  bottom: 24,
-  left: "50%",
-  transform: "translateX(-50%)",
-  pointerEvents: "auto",
-  background: "rgba(18, 22, 20, 0.92)",
-  backdropFilter: "blur(14px)",
-  border: "2px solid #F0D9A8",
-  borderRadius: 12,
-  padding: "14px 18px",
-  color: "#ffffff",
-  width: 360,
-  maxWidth: "calc(100vw - 32px)",
-  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.55)",
-  animation: "fadeIn 0.2s ease-in-out",
-};
-
-const sidebarContainerStyle: React.CSSProperties = {
-  position: "absolute",
-  top: 16,
-  right: 16,
-  bottom: 16,
-  width: 350,
-  maxWidth: "calc(100vw - 32px)",
-  pointerEvents: "auto",
-  background: "rgba(18, 22, 20, 0.90)",
-  backdropFilter: "blur(14px)",
-  border: "2px solid #F0D9A8",
-  borderRadius: 12,
-  color: "#ffffff",
-  boxShadow: "0 12px 36px rgba(0, 0, 0, 0.5)",
-  display: "flex",
-  flexDirection: "column",
-  transition: "transform 0.25s ease",
-  overflow: "hidden",
-};
-
-const sidebarToggleBtnStyle: React.CSSProperties = {
-  position: "absolute",
-  left: -38,
-  top: 14,
-  background: "rgba(18, 22, 20, 0.92)",
-  border: "2px solid #F0D9A8",
-  borderRight: "none",
-  borderRadius: "8px 0 0 8px",
-  color: "#F0D9A8",
-  padding: "8px 10px",
-  cursor: "pointer",
-  fontWeight: 700,
-  fontSize: 11,
-};
+// ── SHARED INLINE STYLES ─────────────────────────────────────────────
 
 const tabBarStyle: React.CSSProperties = {
   display: "flex",
@@ -598,7 +535,7 @@ const activeTabStyle: React.CSSProperties = {
 const sidebarBodyStyle: React.CSSProperties = {
   flex: 1,
   overflowY: "auto",
-  padding: 14,
+  padding: 12,
 };
 
 const groupItemStyle: React.CSSProperties = {
@@ -619,29 +556,29 @@ const progressBgStyle: React.CSSProperties = {
 };
 
 const hudBtnPrimary: React.CSSProperties = {
-  padding: "6px 12px",
+  padding: "4px 8px",
   borderRadius: 6,
   border: "none",
   background: "#aa3bff",
   color: "#fff",
   fontWeight: 600,
-  fontSize: 12,
+  fontSize: 11,
   cursor: "pointer",
 };
 
 const hudBtnSecondary: React.CSSProperties = {
-  padding: "6px 12px",
+  padding: "4px 8px",
   borderRadius: 6,
   border: "1px solid rgba(240, 217, 168, 0.4)",
   background: "rgba(255, 255, 255, 0.08)",
   color: "#fff",
   fontWeight: 600,
-  fontSize: 12,
+  fontSize: 11,
   cursor: "pointer",
 };
 
 const miniBtnStyle: React.CSSProperties = {
-  padding: "2px 8px",
+  padding: "2px 6px",
   borderRadius: 4,
   border: "1px solid rgba(240, 217, 168, 0.4)",
   background: "rgba(255, 255, 255, 0.1)",
