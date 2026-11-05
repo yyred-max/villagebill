@@ -1,31 +1,58 @@
 /**
- * VillageScene.ts — Stardew Valley inspired Phaser 3 Village
+ * VillageScene.ts — Stardew-style village using Kenney Tiny Town spritesheet
  *
- * - Fixed world size (rumput tidak rusak saat pan/resize)
- * - Colorful trees
- * - House built in stages (puzzle style)
- * - 2D animals (chickens + cows)
- * - Progress = (paid shares / total shares)
- * - Click buildings → emit selectGroup
+ * Assets:
+ *  - /assets/tiny-town.png  (16x16 spritesheet)  ← rename dari .png.png
+ *  - /assets/village-logo.png (optional fallback)
+ *
+ * Progress = paid shares / total shares
+ * Stages: 0 empty → 1 foundation → 2 walls → 3 completed
  */
 
 import Phaser from "phaser";
 import type { Group } from "../lib/contract";
 
+// ─────────────────────────────────────────────
+// FRAME MAP (16x16) — sesuaikan jika perlu
+// Layout tipikal Kenney Tiny Town ~12 kolom
+// ─────────────────────────────────────────────
+const T = {
+  // Grass
+  GRASS_1: 0,
+  GRASS_2: 1,
+  GRASS_3: 2,
+
+  // Trees (perkiraan dari sheet kamu)
+  TREE_ORANGE: 12,
+  TREE_GREEN: 13,
+  TREE_PINE: 14,
+  TREE_ROUND: 15,
+
+  // Path / dirt
+  PATH: 24,
+
+  // Building parts (perkiraan)
+  ROOF_RED: 36,
+  WALL: 48,
+  DOOR: 49,
+  WINDOW: 50,
+  FOUNDATION: 60,
+} as const;
+
 export default class VillageScene extends Phaser.Scene {
   private groups: Group[] = [];
   private buildingContainers: Phaser.GameObjects.Container[] = [];
   private emptyStateText?: Phaser.GameObjects.Text;
-  private terrainGraphics?: Phaser.GameObjects.Graphics;
+  private terrainLayer?: Phaser.GameObjects.Group;
   private decorations: Phaser.GameObjects.GameObject[] = [];
   private animals: Phaser.GameObjects.Container[] = [];
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
   private camStart = { x: 0, y: 0 };
 
-  // Fixed world size — rumput tidak akan rusak saat pan
   private readonly worldWidth = 1600;
   private readonly worldHeight = 1200;
+  private readonly tile = 16;
 
   constructor() {
     super({ key: "VillageScene" });
@@ -50,13 +77,12 @@ export default class VillageScene extends Phaser.Scene {
     this.renderBuildings();
     this.setupCameraControls();
 
-    // Center camera on world at start
     this.cameras.main.centerOn(this.worldWidth / 2, this.worldHeight / 2);
+    this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
     this.scale.on("resize", (gameSize: Phaser.Structs.Size) => {
       this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
       this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
-      // Re-layout buildings only (terrain stays fixed size)
       this.renderBuildings();
     });
 
@@ -67,55 +93,43 @@ export default class VillageScene extends Phaser.Scene {
   }
 
   // ─────────────────────────────────────────────
-  // TERRAIN (Fixed World Size)
+  // TERRAIN (tile-based, fixed world)
   // ─────────────────────────────────────────────
   private drawTerrain() {
-    if (this.terrainGraphics) {
-      this.terrainGraphics.destroy();
+    if (this.terrainLayer) {
+      this.terrainLayer.clear(true, true);
     }
+    this.terrainLayer = this.add.group();
 
-    const width = this.worldWidth;
-    const height = this.worldHeight;
+    const cols = Math.ceil(this.worldWidth / this.tile);
+    const rows = Math.ceil(this.worldHeight / this.tile);
+    const pathRowStart = Math.floor(rows / 2) - 2;
+    const pathRowEnd = pathRowStart + 4;
 
-    const g = this.add.graphics();
-    this.terrainGraphics = g;
-    g.setDepth(0);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = col * this.tile + this.tile / 2;
+        const y = row * this.tile + this.tile / 2;
 
-    // Grass base
-    g.fillStyle(0x4caf50, 1);
-    g.fillRect(0, 0, width, height);
+        let frame: number = T.GRASS_1;
+        if ((col + row) % 3 === 0) frame = T.GRASS_2;
+        if ((col + row) % 5 === 0) frame = T.GRASS_3;
 
-    // Checker pattern (consistent across whole world)
-    g.fillStyle(0x43a047, 0.35);
-    const tile = 32;
-    for (let x = 0; x < width; x += tile) {
-      for (let y = 0; y < height; y += tile) {
-        if ((x / tile + y / tile) % 2 === 0) {
-          g.fillRect(x, y, tile, tile);
+        // Path di tengah
+        if (row >= pathRowStart && row <= pathRowEnd) {
+          frame = T.PATH;
         }
+
+        const tile = this.add.image(x, y, "tinytown", frame);
+        tile.setDisplaySize(this.tile, this.tile);
+        tile.setDepth(0);
+        this.terrainLayer.add(tile);
       }
     }
-
-    // Dirt path
-    g.fillStyle(0xc4a484, 1);
-    g.fillRect(0, height / 2 - 28, width, 56);
-    g.fillStyle(0xa1887f, 0.6);
-    g.fillRect(0, height / 2 - 30, width, 4);
-    g.fillRect(0, height / 2 + 26, width, 4);
-
-    // Border
-    g.fillStyle(0x2e7d32, 0.85);
-    g.fillRect(0, 0, width, 8);
-    g.fillRect(0, height - 8, width, 8);
-    g.fillRect(0, 0, 8, height);
-    g.fillRect(width - 8, 0, 8, height);
-
-    // Camera cannot pan outside the world
-    this.cameras.main.setBounds(0, 0, width, height);
   }
 
   // ─────────────────────────────────────────────
-  // COLORFUL TREES
+  // TREES dari spritesheet
   // ─────────────────────────────────────────────
   private spawnDecorations() {
     this.decorations.forEach((d) => d.destroy());
@@ -123,77 +137,35 @@ export default class VillageScene extends Phaser.Scene {
 
     const width = this.worldWidth;
     const height = this.worldHeight;
-    const rng = (min: number, max: number) => Phaser.Math.Between(min, max);
+    const rng = (a: number, b: number) => Phaser.Math.Between(a, b);
 
-    const leafColors = [
-      0x2e7d32, // green
-      0x66bb6a, // light green
-      0xf48fb1, // pink
-      0xffb74d, // orange
-      0xfff176, // yellow
-      0x81c784, // soft green
-      0xef5350, // red autumn
-    ];
+    const treeFrames = [T.TREE_ORANGE, T.TREE_GREEN, T.TREE_PINE, T.TREE_ROUND];
 
-    for (let i = 0; i < 22; i++) {
-      const x = rng(60, width - 60);
-      const y = rng(60, height - 60);
+    for (let i = 0; i < 28; i++) {
+      const x = rng(48, width - 48);
+      const y = rng(48, height - 48);
 
-      // Avoid road
-      if (Math.abs(y - height / 2) < 80) continue;
+      // Hindari jalan
+      if (Math.abs(y - height / 2) < 90) continue;
 
-      const tree = this.add.container(x, y);
+      const frame = Phaser.Utils.Array.GetRandom(treeFrames);
+      const tree = this.add.image(x, y, "tinytown", frame);
+      tree.setDisplaySize(32, 32); // scale 2x biar lebih kelihatan
       tree.setDepth(2);
-
-      // Trunk
-      const trunk = this.add.rectangle(0, 10, 10, 22, 0x5d4037);
-      tree.add(trunk);
-
-      // Leaves
-      const color = Phaser.Utils.Array.GetRandom(leafColors);
-      const leaf1 = this.add.circle(0, -12, 18, color);
-      const leaf2 = this.add.circle(-10, -4, 14, color);
-      const leaf3 = this.add.circle(10, -4, 14, color);
-      const leaf4 = this.add.circle(
-        0,
-        -22,
-        12,
-        Phaser.Display.Color.IntegerToColor(color).lighten(18).color
-      );
-
-      tree.add([leaf1, leaf2, leaf3, leaf4]);
       this.decorations.push(tree);
 
-      // Soft sway
+      // Sway pelan
       this.tweens.add({
         targets: tree,
-        angle: Phaser.Math.Between(-3, 3),
-        duration: Phaser.Math.Between(2200, 4200),
+        angle: rng(-4, 4),
+        duration: rng(2200, 4000),
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
       });
     }
 
-    // Rocks
-    for (let i = 0; i < 10; i++) {
-      const x = rng(40, width - 40);
-      const y = rng(50, height - 50);
-      if (Math.abs(y - height / 2) < 55) continue;
-
-      const rock = this.add.ellipse(
-        x,
-        y,
-        rng(8, 16),
-        rng(6, 11),
-        0x90a4ae,
-        0.85
-      );
-      rock.setDepth(1);
-      this.decorations.push(rock);
-    }
-
-    // Street lights along path
+    // Street lights (masih procedural, sederhana)
     const pathY = height / 2;
     const spacing = width / 7;
     for (let i = 1; i <= 6; i++) {
@@ -202,7 +174,6 @@ export default class VillageScene extends Phaser.Scene {
       const light = this.add.circle(x, pathY - 44, 10, 0xffeb3b);
       const glow = this.add.circle(x, pathY - 44, 16, 0xffeb3b, 0.25);
       glow.setBlendMode(Phaser.BlendModes.ADD);
-
       pole.setDepth(2);
       light.setDepth(2);
       glow.setDepth(2);
@@ -211,7 +182,7 @@ export default class VillageScene extends Phaser.Scene {
   }
 
   // ─────────────────────────────────────────────
-  // 2D ANIMALS
+  // ANIMALS (tetap procedural 2D)
   // ─────────────────────────────────────────────
   private spawnAnimals() {
     this.animals.forEach((a) => a.destroy());
@@ -301,10 +272,8 @@ export default class VillageScene extends Phaser.Scene {
 
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!this.isDragging) return;
-      const dx = this.dragStart.x - pointer.x;
-      const dy = this.dragStart.y - pointer.y;
-      this.cameras.main.scrollX = this.camStart.x + dx;
-      this.cameras.main.scrollY = this.camStart.y + dy;
+      this.cameras.main.scrollX = this.camStart.x + (this.dragStart.x - pointer.x);
+      this.cameras.main.scrollY = this.camStart.y + (this.dragStart.y - pointer.y);
     });
 
     this.input.on("pointerup", () => {
@@ -355,7 +324,6 @@ export default class VillageScene extends Phaser.Scene {
       return;
     }
 
-    // Layout buildings in a nice grid inside the world
     const cols = Math.min(4, Math.max(1, this.groups.length));
     const cellWidth = 280;
     const startX = width / 2 - ((cols - 1) * cellWidth) / 2;
@@ -400,77 +368,95 @@ export default class VillageScene extends Phaser.Scene {
 
     const isSettled = group.status === "Settled";
     const pct = isSettled ? 100 : this.calcProgress(group);
-
-    // 0% → empty plot | 1-49% → foundation | 50-99% → walls | 100% → finished
     const stage = pct >= 100 ? 3 : pct >= 50 ? 2 : pct > 0 ? 1 : 0;
 
     // Shadow
-    const shadow = this.add.ellipse(0, 34, 80, 22, 0x000000, 0.28);
+    const shadow = this.add.ellipse(0, 36, 80, 22, 0x000000, 0.28);
     container.add(shadow);
 
-    const g = this.add.graphics();
-
+    // ── Building by stage ──
     if (stage === 0) {
       // Empty dirt plot
-      g.fillStyle(0x6d4c41, 0.85);
-      g.fillRect(-30, -10, 60, 40);
+      const g = this.add.graphics();
+      g.fillStyle(0x6d4c41, 0.9);
+      g.fillRect(-30, -8, 60, 40);
       g.lineStyle(2, 0x8d6e63, 1);
-      g.strokeRect(-30, -10, 60, 40);
-      g.lineStyle(1, 0xa1887f, 0.6);
-      g.strokeRect(-24, -4, 48, 28);
+      g.strokeRect(-30, -8, 60, 40);
+      container.add(g);
     } else if (stage === 1) {
-      // Foundation
-      g.fillStyle(0x78909c, 1);
-      g.fillRect(-32, 0, 64, 28);
-      g.lineStyle(2, 0x546e7a, 1);
-      g.strokeRect(-32, 0, 64, 28);
-      for (let i = -32; i < 32; i += 16) {
-        g.lineBetween(i, 0, i, 28);
+      // Foundation (pakai tile jika ada, fallback graphics)
+      if (this.textures.exists("tinytown")) {
+        for (let i = -1; i <= 1; i++) {
+          const t = this.add.image(i * 16, 8, "tinytown", T.FOUNDATION);
+          t.setDisplaySize(18, 18);
+          container.add(t);
+        }
+      } else {
+        const g = this.add.graphics();
+        g.fillStyle(0x78909c, 1);
+        g.fillRect(-32, 0, 64, 28);
+        container.add(g);
       }
-      g.lineBetween(-32, 14, 32, 14);
     } else if (stage === 2) {
-      // Walls + scaffolding
+      // Walls under construction
+      const g = this.add.graphics();
       g.fillStyle(0x78909c, 1);
-      g.fillRect(-32, 8, 64, 20);
+      g.fillRect(-32, 10, 64, 20);
       g.fillStyle(0xffcc80, 1);
-      g.fillRect(-28, -28, 56, 40);
+      g.fillRect(-28, -26, 56, 38);
       g.lineStyle(2, 0x8d6e63, 1);
-      g.strokeRect(-28, -28, 56, 40);
-      g.fillStyle(0x81d4fa, 0.85);
-      g.fillRect(-18, -18, 12, 12);
-      g.fillRect(6, -18, 12, 12);
-      g.lineStyle(3, 0xddaa54, 0.8);
-      g.lineBetween(-36, -36, -36, 28);
-      g.lineBetween(36, -36, 36, 28);
-      g.lineBetween(-36, -20, 36, -20);
+      g.strokeRect(-28, -26, 56, 38);
+      g.fillStyle(0x81d4fa, 0.8);
+      g.fillRect(-18, -16, 12, 12);
+      g.fillRect(6, -16, 12, 12);
+      // Scaffolding
+      g.lineStyle(3, 0xddaa54, 0.85);
+      g.lineBetween(-36, -34, -36, 28);
+      g.lineBetween(36, -34, 36, 28);
+      g.lineBetween(-36, -18, 36, -18);
+      container.add(g);
     } else {
-      // Finished house
-      g.fillStyle(0x5d4037, 1);
-      g.fillRect(-32, 10, 64, 22);
+      // ===== COMPLETED HOUSE (spritesheet + clean look) =====
+      // Tidak pakai village-logo.png (bundar)
+      // Kita susun dari tile + roof procedural yang rapi
+
+      // Foundation
+      if (this.textures.exists("tinytown")) {
+        for (let i = -1; i <= 1; i++) {
+          const base = this.add.image(i * 16, 14, "tinytown", T.FOUNDATION);
+          base.setDisplaySize(18, 16);
+          container.add(base);
+        }
+      }
+
+      // Walls
+      const g = this.add.graphics();
       g.fillStyle(0xfff3e0, 1);
-      g.fillRect(-28, -24, 56, 38);
+      g.fillRect(-28, -22, 56, 36);
+
+      // Windows
       g.fillStyle(0x81d4fa, 1);
-      g.fillRect(-18, -14, 12, 12);
-      g.fillRect(6, -14, 12, 12);
+      g.fillRect(-18, -12, 12, 12);
+      g.fillRect(6, -12, 12, 12);
+
+      // Door
       g.fillStyle(0x6d4c41, 1);
-      g.fillRect(-8, -2, 16, 24);
+      g.fillRect(-8, 0, 16, 22);
+
+      // Roof
       g.fillStyle(0xc62828, 1);
-      g.fillTriangle(0, -46, -36, -20, 36, -20);
+      g.fillTriangle(0, -44, -34, -18, 34, -18);
+
+      // Golden banner
       g.fillStyle(0xffd700, 1);
-      g.fillRect(-18, -52, 36, 8);
-    }
+      g.fillRect(-16, -50, 32, 7);
 
-    container.add(g);
+      container.add(g);
 
-    // Optional sprite when complete
-    if (stage === 3 && this.textures.exists("complete-house")) {
-      const glow = this.add.ellipse(0, 0, 92, 92, 0xffd700, 0.22);
+      // Soft glow (bukan lingkaran besar)
+      const glow = this.add.ellipse(0, -8, 88, 70, 0xffd700, 0.18);
       glow.setBlendMode(Phaser.BlendModes.ADD);
       container.add(glow);
-
-      const sprite = this.add.image(0, -4, "complete-house");
-      sprite.setDisplaySize(62, 62);
-      container.add(sprite);
     }
 
     // Name badge
@@ -481,13 +467,13 @@ export default class VillageScene extends Phaser.Scene {
         fontSize: "11px",
         fontStyle: "bold",
         color: "#ffffff",
-        backgroundColor: "rgba(10, 20, 12, 0.82)",
+        backgroundColor: "rgba(10, 20, 12, 0.85)",
         padding: { x: 7, y: 3 },
       })
       .setOrigin(0.5);
     container.add(label);
 
-    // Status badge
+    // Status
     const statusText =
       stage === 3
         ? "🏆 COMPLETED"
@@ -567,9 +553,8 @@ export default class VillageScene extends Phaser.Scene {
       );
     });
 
-    // Confetti when completed
     if (stage === 3) {
-      this.time.delayedCall(150, () => this.spawnConfetti(x, y - 30));
+      this.time.delayedCall(120, () => this.spawnConfetti(x, y - 30));
     }
 
     return container;
@@ -577,8 +562,7 @@ export default class VillageScene extends Phaser.Scene {
 
   private spawnConfetti(x: number, y: number) {
     const colors = [0xffd700, 0xff6b6b, 0x4ecdc4, 0xffe66d, 0x95e1d3, 0xf48fb1];
-
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 18; i++) {
       const p = this.add.rectangle(
         x,
         y,
@@ -587,7 +571,6 @@ export default class VillageScene extends Phaser.Scene {
         Phaser.Utils.Array.GetRandom(colors)
       );
       p.setDepth(30);
-
       this.tweens.add({
         targets: p,
         x: x + Phaser.Math.Between(-70, 70),
