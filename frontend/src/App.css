@@ -137,6 +137,13 @@
   left: 16px;
   pointer-events: auto;
   z-index: 15;
+  max-height: 320px;
+}
+
+.hud-bottom-left > div {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 12px;
 }
 
 @media (max-width: 768px) {

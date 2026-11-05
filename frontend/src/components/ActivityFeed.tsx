@@ -304,7 +304,7 @@ const containerStyle: React.CSSProperties = {
   backdropFilter: "blur(12px)",
   border: "2px solid #F0D9A8",
   borderRadius: 12,
-  padding: "0.75rem 0.9rem",
+  padding: "12px 14px",
   width: "auto",
   minWidth: 240,
   maxWidth: "min(340px, calc(100vw - 24px))",
@@ -359,9 +359,9 @@ const listStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 6,
-  maxHeight: 180,
+  maxHeight: 200,
   overflowY: "auto",
-  paddingRight: 4,
+  paddingRight: 6,
   marginTop: 6,
 };
 

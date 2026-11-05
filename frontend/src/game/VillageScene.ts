@@ -36,6 +36,8 @@ export default class VillageScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
+    // Load complete house image
+    this.load.image("complete-house", "/assets/village-logo.png");
   }
 
   create() {
@@ -43,6 +45,7 @@ export default class VillageScene extends Phaser.Scene {
     this.spawnDecorations();
     this.renderBuildings();
     this.setupCameraControls();
+    this.spawnAnimals();
 
     // Listen for window resize from Phaser's RESIZE scale mode
     this.scale.on("resize", (gameSize: Phaser.Structs.Size) => {
@@ -164,6 +167,44 @@ export default class VillageScene extends Phaser.Scene {
   }
 
   // ─────────────────────────────────────────────
+  // MOVING ANIMALS/NPCs
+  // ─────────────────────────────────────────────
+  private spawnAnimals() {
+    if (!this.textures.exists("tinytown")) return;
+
+    const { width, height } = this.scale;
+    
+    // Spawn 3 cute walking animals (chickens, dogs, etc.)
+    const animalFrames = [192, 193, 208, 209]; // Animal sprites from Kenney
+    
+    for (let i = 0; i < 3; i++) {
+      const frame = Phaser.Math.RND.pick(animalFrames);
+      const startX = Phaser.Math.Between(100, width - 100);
+      const startY = Phaser.Math.Between(100, height - 100);
+      
+      const animal = this.add.image(startX, startY, "tinytown", frame);
+      animal.setDisplaySize(32, 32);
+      animal.setDepth(3);
+      
+      // Random walk animation
+      this.tweens.add({
+        targets: animal,
+        x: Phaser.Math.Between(50, width - 50),
+        duration: Phaser.Math.Between(3000, 6000),
+        ease: "Linear",
+        yoyo: true,
+        repeat: -1,
+        onYoyo: () => {
+          animal.setFlipX(!animal.flipX);
+        },
+        onRepeat: () => {
+          animal.setFlipX(!animal.flipX);
+        },
+      });
+    }
+  }
+
+  // ─────────────────────────────────────────────
   // CAMERA (Pan & Drag Controls)
   // ─────────────────────────────────────────────
   private setupCameraControls() {
@@ -251,23 +292,6 @@ export default class VillageScene extends Phaser.Scene {
     });
   }
 
-  private calcProgress(group: Group): number {
-    const members = Object.values(group.members ?? {});
-    if (members.length === 0) return 0;
-
-    let total = 0n;
-    let paid = 0n;
-
-    for (const m of members) {
-      const share = BigInt(m.share?.toString() ?? "0");
-      total += share;
-      if (m.paid) paid += share;
-    }
-
-    if (total === 0n) return 0;
-    return Number((paid * 100n) / total);
-  }
-
   private createBuildingObject(
     group: Group,
     x: number,
@@ -277,39 +301,74 @@ export default class VillageScene extends Phaser.Scene {
     container.setDepth(5);
 
     const isSettled = group.status === "Settled";
-    const pct = isSettled ? 100 : this.calcProgress(group);
-    const stage = pct >= 100 ? 2 : pct >= 50 ? 1 : 0;
+    
+    // Calculate progress percentage based on paid members
+    const members = Object.values(group.members ?? {});
+    let totalShare = 0n;
+    let paidShare = 0n;
+    
+    for (const m of members) {
+      const share = BigInt(m.share?.toString() ?? "0");
+      totalShare += share;
+      if (m.paid) paidShare += share;
+    }
+    
+    const pct = totalShare > 0n ? Number((paidShare * 100n) / totalShare) : 0;
 
     // Drop shadow
     const shadow = this.add.ellipse(0, 32, 78, 22, 0x000000, 0.3);
     container.add(shadow);
 
-    // Building visual
-    if (this.textures.exists("tinytown")) {
-      // Use different house frames based on progress stage
-      // Stage 0 (Foundation): frames 128-131 (small/foundation houses)
-      // Stage 1 (Walls): frames 144-147 (medium houses)
-      // Stage 2 (Complete): frames 160-163 (complete houses)
-      let houseFrame: number;
-      if (stage === 0) {
-        houseFrame = 128 + Phaser.Math.Between(0, 3);
-      } else if (stage === 1) {
-        houseFrame = 144 + Phaser.Math.Between(0, 3);
-      } else {
-        houseFrame = 160 + Phaser.Math.Between(0, 3);
+    // Building visual based on progress
+    if (pct === 0) {
+      // 0%: Dirt plot
+      const g = this.add.graphics();
+      g.fillStyle(0x5d4037, 0.8);
+      g.fillRect(-28, -28, 56, 56);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(-28, -28, 56, 56);
+      container.add(g);
+    } else if (pct < 50) {
+      // 1-49%: Foundation (grey/brown blocks)
+      const g = this.add.graphics();
+      g.fillStyle(0x78909c, 0.9);
+      g.fillRect(-28, -20, 56, 40);
+      g.lineStyle(2, 0x546e7a, 1);
+      g.strokeRect(-28, -20, 56, 40);
+      // Add some block lines
+      for (let i = -28; i < 28; i += 14) {
+        g.lineBetween(i, -20, i, 20);
       }
-
-      const sprite = this.add.image(0, 0, "tinytown", houseFrame);
-      sprite.setDisplaySize(64, 64);
-
-      if (stage === 0) {
-        sprite.setAlpha(0.9);
-      } else if (stage === 1) {
-        sprite.setAlpha(0.95);
-      } else {
-        sprite.setAlpha(1);
+      container.add(g);
+    } else if (pct < 100) {
+      // 50-99%: Half-built walls (wooden boxes/scaffolding)
+      const g = this.add.graphics();
+      // Wooden frame
+      g.fillStyle(0x8d6e63, 0.9);
+      g.fillRect(-30, -35, 60, 60);
+      g.lineStyle(3, 0x5d4037, 1);
+      g.strokeRect(-30, -35, 60, 60);
+      // Window holes
+      g.fillStyle(0x000000, 0.4);
+      g.fillRect(-20, -25, 15, 15);
+      g.fillRect(5, -25, 15, 15);
+      // Scaffolding
+      g.lineStyle(2, 0xddaa54, 0.7);
+      g.lineBetween(-35, -40, -35, 30);
+      g.lineBetween(35, -40, 35, 30);
+      container.add(g);
+    } else {
+      // 100% (Settled): Complete house with glow
+      if (this.textures.exists("complete-house")) {
+        // Glow effect
+        const glow = this.add.ellipse(0, 0, 90, 90, 0xddaa54, 0.3);
+        glow.setBlendMode(Phaser.BlendModes.ADD);
+        container.add(glow);
+        
+        const sprite = this.add.image(0, 0, "complete-house");
+        sprite.setDisplaySize(64, 64);
+        container.add(sprite);
       }
-      container.add(sprite);
     }
 
     // Name badge (Top)
@@ -326,39 +385,12 @@ export default class VillageScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(label);
 
-    // Status / Progress badge (Bottom)
-    const statusText = isSettled
-      ? "🏆 COMPLETED"
-      : stage === 0
-        ? `🧱 Foundation ${pct}%`
-        : stage === 1
-          ? `🏗 Walls ${pct}%`
-          : `🏠 ${pct}%`;
-
-    const statusColor = isSettled
-      ? "#27ae60"
-      : stage === 0
-        ? "#8d6e63"
-        : "#e67e22";
-
-    const badge = this.add
-      .text(0, 48, statusText, {
-        fontFamily: "monospace",
-        fontSize: "10px",
-        fontStyle: "bold",
-        color: "#ffffff",
-        backgroundColor: statusColor,
-        padding: { x: 8, y: 3 },
-      })
-      .setOrigin(0.5);
-    container.add(badge);
-
-    // Mini progress bar under building
+    // Mini progress bar under building (only if not settled)
     if (!isSettled) {
-      const barBg = this.add.rectangle(0, 64, 60, 6, 0x000000, 0.5);
+      const barBg = this.add.rectangle(0, 48, 60, 6, 0x000000, 0.5);
       const barFill = this.add.rectangle(
         -30 + (60 * pct) / 200,
-        64,
+        48,
         (60 * pct) / 100,
         6,
         0x66bb6a,
