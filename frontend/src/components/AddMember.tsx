@@ -44,6 +44,10 @@ export default function AddMember({ selector, groups, onSuccess }: Props) {
     setStatus(null);
 
     // Basic client-side validation
+    if (!selector) {
+      setError("Wallet selector not initialized.");
+      return;
+    }
     if (!groupId) {
       setError("Please select a group.");
       return;

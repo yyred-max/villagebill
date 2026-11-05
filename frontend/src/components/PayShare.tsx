@@ -50,6 +50,10 @@ export default function PayShare({ selector, accountId, groups, onSuccess }: Pro
   const myMembership = selectedGroup?.members[accountId] ?? null;
 
   const handlePay = async () => {
+    if (!selector) {
+      setError("Wallet selector not initialized.");
+      return;
+    }
     if (!selectedGroup || !myMembership) return;
 
     setError(null);

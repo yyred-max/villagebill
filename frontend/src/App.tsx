@@ -15,11 +15,11 @@ import { useState, useEffect, useCallback } from "react";
 import type { WalletSelector } from "@near-wallet-selector/core";
 import { initWalletSelector, CONTRACT_ID } from "./lib/near";
 import {
-  createGroup,
   getGroups,
   friendlyError,
   type Group,
 } from "./lib/contract";
+import CreateGroup from "./components/CreateGroup";
 import AddMember from "./components/AddMember";
 import PayShare from "./components/PayShare";
 import ActivityFeed from "./components/ActivityFeed";
@@ -33,19 +33,25 @@ function App() {
   // Groups state
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
-  const [groupName, setGroupName] = useState("");
-  const [createStatus, setCreateStatus] = useState<string | null>(null);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   // ── Wallet init ────────────────────────────────────────────────────
   useEffect(() => {
     initWalletSelector().then((s) => {
       setSelector(s);
-      const accounts = s.store.getState().accounts;
-      if (accounts.length > 0) {
-        setAccountId(accounts[0].accountId);
+      const state = s.store.getState();
+      if (state.accounts.length > 0) {
+        setAccountId(state.accounts[0].accountId);
       }
+
+      s.on("signedIn", (e) => {
+        if (e.accounts && e.accounts.length > 0) {
+          setAccountId(e.accounts[0].accountId);
+        }
+      });
+
+      s.on("signedOut", () => {
+        setAccountId(null);
+      });
     });
   }, []);
 
@@ -66,13 +72,22 @@ function App() {
   }, [selector, fetchGroups]);
 
   // ── Wallet handlers ────────────────────────────────────────────────
-  const handleConnect = async () => {
-    if (!selector) return;
+  const handleConnect = async (walletId: "meteor-wallet" | "my-near-wallet" = "meteor-wallet") => {
+    if (!selector) {
+      alert("Wallet selector not initialized. Please refresh.");
+      return;
+    }
     try {
-      const wallet = await selector.wallet();
+      const wallet = await selector.wallet(walletId);
+      if (!wallet) {
+        alert("Selected wallet could not be loaded.");
+        return;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const accounts = await (wallet as any).signIn({ contractId: CONTRACT_ID });
-      setAccountId(accounts[0].accountId);
+      if (accounts && accounts.length > 0) {
+        setAccountId(accounts[0].accountId);
+      }
     } catch (err) {
       const msg = friendlyError(err);
       alert(msg);
@@ -81,30 +96,13 @@ function App() {
 
   const handleDisconnect = async () => {
     if (!selector) return;
-    const wallet = await selector.wallet();
-    await wallet.signOut();
-    setAccountId(null);
-  };
-
-  // ── Create Group handler ───────────────────────────────────────────
-  const handleCreateGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selector || !groupName.trim()) return;
-
-    setCreating(true);
-    setCreateError(null);
-    setCreateStatus(null);
-
     try {
-      await createGroup(selector, groupName.trim());
-      setCreateStatus(`✅ Group "${groupName.trim()}" created!`);
-      setGroupName("");
-      await fetchGroups();
+      const wallet = await selector.wallet();
+      await wallet.signOut();
     } catch (err) {
-      setCreateError(friendlyError(err));
-    } finally {
-      setCreating(false);
+      console.warn("Sign out fallback:", err);
     }
+    setAccountId(null);
   };
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -145,9 +143,17 @@ function App() {
         </div>
       ) : (
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <button onClick={handleConnect} style={btnPrimary}>
-            Connect Wallet
-          </button>
+          <p style={{ fontSize: 13, color: "var(--text)", marginBottom: 8 }}>
+            Connect your NEAR Testnet wallet:
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <button onClick={() => handleConnect("meteor-wallet")} style={btnPrimary}>
+              ☄️ Meteor Wallet
+            </button>
+            <button onClick={() => handleConnect("my-near-wallet")} style={btnSecondary}>
+              🌐 MyNearWallet
+            </button>
+          </div>
         </div>
       )}
 
@@ -164,24 +170,11 @@ function App() {
       {accountId && selector && (
         <>
           {/* ── Create Group (F2) ───────────────────────────────── */}
-          <div style={sectionStyle}>
-            <h2 style={{ margin: "0 0 12px" }}>🏠 Create Group</h2>
-            <form onSubmit={handleCreateGroup} style={{ display: "flex", gap: 8 }}>
-              <input
-                type="text"
-                placeholder="Group name (e.g. Dinner)"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                style={{ ...inputStyle, flex: 1 }}
-                disabled={creating}
-              />
-              <button type="submit" disabled={creating} style={btnPrimary}>
-                {creating ? "Creating…" : "Create"}
-              </button>
-            </form>
-            {createError && <p style={errStyle}>❌ {createError}</p>}
-            {createStatus && <p style={okStyle}>{createStatus}</p>}
-          </div>
+          <CreateGroup
+            selector={selector}
+            accountId={accountId}
+            onSuccess={fetchGroups}
+          />
 
           {/* ── Add Member (F3) ─────────────────────────────────── */}
           <AddMember
@@ -370,16 +363,6 @@ const sectionStyle: React.CSSProperties = {
   textAlign: "left",
 };
 
-const inputStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  fontSize: 15,
-  fontFamily: "var(--mono)",
-  background: "var(--code-bg)",
-  color: "var(--text-h)",
-};
-
 const groupCardStyle: React.CSSProperties = {
   border: "1px solid var(--border)",
   borderRadius: 6,
@@ -394,18 +377,6 @@ const progressBg: React.CSSProperties = {
   borderRadius: 3,
   background: "var(--border)",
   overflow: "hidden",
-};
-
-const errStyle: React.CSSProperties = {
-  color: "#e74c3c",
-  marginTop: 8,
-  fontSize: 14,
-};
-
-const okStyle: React.CSSProperties = {
-  color: "#27ae60",
-  marginTop: 8,
-  fontSize: 14,
 };
 
 export default App;

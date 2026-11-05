@@ -45,7 +45,10 @@ export function friendlyError(error: unknown): string {
   const msg =
     error instanceof Error ? error.message : String(error);
 
-  // Wallet-level errors
+  // Wallet-level / connection errors
+  if (/no wallet (selected|connected)|please connect your wallet/i.test(msg)) {
+    return "Please connect your wallet first.";
+  }
   if (/reject|denied|cancel/i.test(msg)) {
     return "Transaction was rejected — you cancelled the signing request.";
   }
@@ -114,13 +117,64 @@ export async function getGroup(
 
 const GAS = BigInt("30000000000000"); // 30 TGas
 
+/**
+ * Safely obtain an active connected wallet from the selector.
+ * Falls back to selectedWalletId or configured modules to avoid "No wallet selected" errors.
+ */
+export async function getConnectedWallet(selector: WalletSelector) {
+  if (!selector) {
+    throw new Error("Wallet selector not initialized.");
+  }
+
+  const state = selector.store.getState();
+  const selectedWalletId = state.selectedWalletId;
+
+  // 1. Try currently active wallet id
+  if (selectedWalletId) {
+    try {
+      const wallet = await selector.wallet(selectedWalletId);
+      if (wallet) return wallet;
+    } catch {
+      // ignore
+    }
+  }
+
+  // 2. Try default wallet() lookup
+  try {
+    const wallet = await selector.wallet();
+    if (wallet) return wallet;
+  } catch {
+    // ignore
+  }
+
+  // 3. Try available modules if accounts exist
+  for (const id of ["meteor-wallet", "my-near-wallet"]) {
+    try {
+      const wallet = await selector.wallet(id);
+      if (wallet) return wallet;
+    } catch {
+      // ignore
+    }
+  }
+
+  throw new Error("No wallet connected. Please connect your wallet first.");
+}
+
 async function callMethod(
   selector: WalletSelector,
   method: string,
   args: Record<string, unknown>,
   deposit: bigint = BigInt(0),
 ) {
-  const wallet = await selector.wallet();
+  if (!selector) {
+    throw new Error("Wallet selector not initialized.");
+  }
+
+  const wallet = await getConnectedWallet(selector);
+  if (!wallet) {
+    throw new Error("Please connect your wallet first.");
+  }
+
   return wallet.signAndSendTransaction({
     receiverId: CONTRACT_ID,
     actions: [
