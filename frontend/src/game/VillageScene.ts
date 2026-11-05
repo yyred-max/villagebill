@@ -70,59 +70,28 @@ export default class VillageScene extends Phaser.Scene {
     }
 
     const { width, height } = this.scale;
-    const tileSize = 32; // Scale up 16x16 tiles to 32x32 for visibility
     
-    // Create a container for terrain tiles
-    const terrainContainer = this.add.container(0, 0);
-    terrainContainer.setDepth(0);
-    this.terrainGraphics = terrainContainer as any;
-
-    if (!this.textures.exists("tinytown")) {
-      return; // Spritesheet not loaded yet
-    }
-
-    // Grass base layer (frame 1 = grass tile in Kenney Tiny Town)
-    const grassFrames = [1, 2, 17, 18]; // Various grass tiles
-    for (let x = 0; x < width; x += tileSize) {
-      for (let y = 0; y < height; y += tileSize) {
-        const frame = Phaser.Math.RND.pick(grassFrames);
-        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
-        tile.setDisplaySize(tileSize, tileSize);
-        tile.setDepth(0);
-        terrainContainer.add(tile);
-      }
-    }
-
-    // Dirt path across the middle (frame 32 = dirt/path in Kenney Tiny Town)
-    const pathY = height / 2;
-    const pathHeight = 96;
-    const dirtFrames = [32, 33, 48, 49]; // Dirt/path tiles
+    // Grass base layer
+    const g = this.add.graphics();
+    this.terrainGraphics = g;
+    g.setDepth(0);
     
-    for (let x = 0; x < width; x += tileSize) {
-      for (let y = pathY - pathHeight / 2; y < pathY + pathHeight / 2; y += tileSize) {
-        const frame = Phaser.Math.RND.pick(dirtFrames);
-        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
-        tile.setDisplaySize(tileSize, tileSize);
-        tile.setDepth(0);
-        terrainContainer.add(tile);
-      }
-    }
-
-    // Small water feature in top-left (frame 80 = water in Kenney Tiny Town)
-    const waterFrames = [80, 81, 96, 97];
-    for (let x = 30; x < 190; x += tileSize) {
-      for (let y = 20; y < 70; y += tileSize) {
-        const frame = Phaser.Math.RND.pick(waterFrames);
-        const tile = this.add.image(x + tileSize / 2, y + tileSize / 2, "tinytown", frame);
-        tile.setDisplaySize(tileSize, tileSize);
-        tile.setDepth(0);
-        terrainContainer.add(tile);
-      }
-    }
+    // Deep green grass base
+    g.fillStyle(0x2e7d32, 1);
+    g.fillRect(0, 0, width, height);
+    
+    // Dirt path across the middle
+    g.fillStyle(0x8d6e63, 1);
+    g.fillRect(0, height / 2 - 30, width, 60);
+    
+    // Path borders for definition
+    g.fillStyle(0x5d4037, 0.5);
+    g.fillRect(0, height / 2 - 32, width, 2);
+    g.fillRect(0, height / 2 + 28, width, 2);
   }
 
   // ─────────────────────────────────────────────
-  // DECORATIONS (Trees, Flowers, Rocks)
+  // DECORATIONS (Trees, Street Lights)
   // ─────────────────────────────────────────────
   private spawnDecorations() {
     this.decorations.forEach((d) => d.destroy());
@@ -131,74 +100,94 @@ export default class VillageScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const rng = (min: number, max: number) => Phaser.Math.Between(min, max);
 
-    if (!this.textures.exists("tinytown")) {
-      return; // Spritesheet not loaded yet
-    }
-
-    // Clustered Trees from Kenney pack (frames 64-67 = trees in Tiny Town)
-    const treeFrames = [64, 65, 66, 67];
-    for (let i = 0; i < 14; i++) {
+    // Scatter 12 trees around the map
+    for (let i = 0; i < 12; i++) {
       const x = rng(50, width - 50);
       const y = rng(40, height - 40);
 
       // Avoid blocking the main road
       if (Math.abs(y - height / 2) < 60) continue;
 
-      const frame = Phaser.Math.RND.pick(treeFrames);
-      const tree = this.add.image(x, y, "tinytown", frame);
-      tree.setDisplaySize(48, 48); // Scale up for visibility
-      tree.setDepth(1);
-      this.decorations.push(tree);
+      // Tree trunk (brown rectangle)
+      const trunk = this.add.rectangle(x, y, 10, 20, 0x5d4037);
+      trunk.setDepth(1);
+      this.decorations.push(trunk);
+
+      // Tree leaves (green circle)
+      const leaves = this.add.circle(x, y - 15, 20, 0x2e7d32);
+      leaves.setDepth(1);
+      this.decorations.push(leaves);
     }
 
-    // Rocks & decorative elements (frames 112-115 = rocks/bushes)
-    const rockFrames = [112, 113, 114, 115];
-    for (let i = 0; i < 10; i++) {
-      const x = rng(40, width - 40);
-      const y = rng(40, height - 40);
-      if (Math.abs(y - height / 2) < 45) continue;
-
-      const frame = Phaser.Math.RND.pick(rockFrames);
-      const rock = this.add.image(x, y, "tinytown", frame);
-      rock.setDisplaySize(24, 24);
-      rock.setDepth(1);
-      this.decorations.push(rock);
+    // Place 5 street lights along the path
+    const pathY = height / 2;
+    const spacing = width / 6;
+    for (let i = 1; i <= 5; i++) {
+      const x = spacing * i;
+      
+      // Light pole (grey rectangle)
+      const pole = this.add.rectangle(x, pathY - 15, 6, 50, 0x78909c);
+      pole.setDepth(1);
+      this.decorations.push(pole);
+      
+      // Light bulb (yellow circle)
+      const light = this.add.circle(x, pathY - 42, 12, 0xffeb3b);
+      light.setDepth(1);
+      this.decorations.push(light);
+      
+      // Glow effect
+      const glow = this.add.circle(x, pathY - 42, 18, 0xffeb3b, 0.3);
+      glow.setBlendMode(Phaser.BlendModes.ADD);
+      glow.setDepth(1);
+      this.decorations.push(glow);
     }
   }
 
   // ─────────────────────────────────────────────
-  // MOVING ANIMALS/NPCs
+  // MOVING ANIMALS/NPCs (Simple Chickens)
   // ─────────────────────────────────────────────
   private spawnAnimals() {
-    if (!this.textures.exists("tinytown")) return;
-
     const { width, height } = this.scale;
     
-    // Spawn 3 cute walking animals (chickens, dogs, etc.)
-    const animalFrames = [192, 193, 208, 209]; // Animal sprites from Kenney
-    
+    // Spawn 3 simple chickens
     for (let i = 0; i < 3; i++) {
-      const frame = Phaser.Math.RND.pick(animalFrames);
       const startX = Phaser.Math.Between(100, width - 100);
       const startY = Phaser.Math.Between(100, height - 100);
       
-      const animal = this.add.image(startX, startY, "tinytown", frame);
-      animal.setDisplaySize(32, 32);
-      animal.setDepth(3);
+      // Chicken body (white circle)
+      const body = this.add.circle(startX, startY, 12, 0xffffff);
+      body.setDepth(3);
+      
+      // Chicken beak (small red triangle)
+      const beak = this.add.triangle(
+        startX + 12, 
+        startY, 
+        0, 0,    // point 1
+        -6, -4,  // point 2
+        -6, 4,   // point 3
+        0xff5252
+      );
+      beak.setDepth(3);
+      
+      // Create container to move both together
+      const chicken = this.add.container(0, 0);
+      chicken.add([body, beak]);
       
       // Random walk animation
       this.tweens.add({
-        targets: animal,
-        x: Phaser.Math.Between(50, width - 50),
+        targets: [body, beak],
+        x: `+=${Phaser.Math.Between(-200, 200)}`,
         duration: Phaser.Math.Between(3000, 6000),
         ease: "Linear",
         yoyo: true,
         repeat: -1,
         onYoyo: () => {
-          animal.setFlipX(!animal.flipX);
+          // Flip beak direction
+          beak.x = body.x + (beak.x > body.x ? -12 : 12);
         },
         onRepeat: () => {
-          animal.setFlipX(!animal.flipX);
+          // Flip beak direction
+          beak.x = body.x + (beak.x > body.x ? -12 : 12);
         },
       });
     }

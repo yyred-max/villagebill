@@ -1,28 +1,32 @@
-The Stardew Valley wooden theme is PERFECT! I love it. Do NOT change the theme colors, fonts, or the right sidebar tabs (Groups, Create, Member, Pay).
+The puzzle building logic is PERFECT (the glowing house for #2 Bali looks great). However, the terrain, trees, and animals are STILL completely missing. The map is just a flat green screen.
 
-However, we need to fix the game world and tidy up the UI layout.
+You are failing to guess the correct frame indices for the Kenney spritesheet. STOP using the spritesheet for decorations immediately.
 
-Please execute these specific tasks:
+Instead, use Phaser Graphics (`this.add.graphics()`) to draw them programmatically. This guarantees they will show up on screen.
 
-### 1. Tidy Up the UI (CSS & React)
-- **Top-Left Card (VillageBill)**: The text "Player: farzone..." and the "Exit" button are cramped. Add better padding, make the text smaller, and align the Exit button nicely.
-- **Bottom-Left Card (Village Activity)**: The scrollbar looks weird, and the text is touching the edges. Add proper padding, adjust the max-height, and style the scrollbar to match the wooden theme.
+Please implement this in `frontend/src/game/VillageScene.ts`:
 
-### 2. Phaser Terrain (VillageScene.ts)
-- The background is currently a flat green color. Please use the `tiny-town.png` spritesheet to draw a tiled grass background. 
-- Draw a dirt path across the middle using the dirt tile frames from the spritesheet.
-- Scatter a few trees and rocks (using Kenney frames) so the map feels alive.
+### 1. Draw the Dirt Path (drawTerrain)
+- Clear the flat green.
+- Draw a horizontal dirt path across the middle using a brown rectangle: `fillStyle(0x8d6e63); fillRect(0, height/2 - 30, width, 60);`
 
-### 3. Puzzle Building Logic (VillageScene.ts)
-Implement the step-by-step building logic based on progress (totalPaid / totalShare):
-- **0%**: Draw a dirt plot (use `this.add.graphics()` to draw a brown rectangle).
-- **1% - 49%**: Draw a foundation (Phaser graphics, grey/brown blocks).
-- **50% - 99%**: Draw half-built walls (Phaser graphics, wooden boxes/scaffolding).
-- **100% (Settled)**: Add the image `this.add.image(x, y, 'complete-house')` (using `village-logo.png`). Add a slight glow behind it.
-*(Remove the floating text boxes that just say "Foundation 0%" on the map. Let the visual of the building speak for itself. The React HUD already shows the progress.)*
+### 2. Draw Trees (spawnDecorations)
+- Scatter 10-15 trees around the map (avoiding the center path).
+- A tree is just a brown rectangle for the trunk, and a green circle for the leaves. 
+- Example code for a tree at (x,y):
+  `this.add.rectangle(x, y, 10, 20, 0x5d4037);` (trunk)
+  `this.add.circle(x, y - 15, 20, 0x2e7d32);` (leaves)
 
-### 4. Add Moving Animals/NPCs (VillageScene.ts)
-- Add a cute walking animal (e.g., a chicken, dog, or a simple NPC character from the Kenney spritesheet).
-- Use a Phaser Tween to make it randomly walk back and forth around the village so it feels "alive" and cute.
+### 3. Draw Street Lights (spawnDecorations)
+- Place 4-5 street lights along the dirt path.
+- A street light is a grey rectangle (pole) and a yellow circle (light) at the top.
 
-Ensure `npm run build` compiles cleanly. Let's make this village look amazing!
+### 4. Draw Animals (spawnAnimals)
+- Instead of loading the spritesheet, draw 3 simple chickens.
+- A chicken is just a white circle for the body, a small red triangle for the beak/comb.
+- Animate them walking left and right using the exact same `tweens.add` logic you already have.
+
+### 5. Keep the Building Logic
+- DO NOT touch the puzzle building logic. It works perfectly.
+
+Make these visual changes using pure Phaser shapes. Ensure it compiles.
