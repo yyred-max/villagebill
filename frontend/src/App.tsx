@@ -251,7 +251,7 @@ export default function App() {
             />
             <div>
               <h1 className="title-text">
-                🏘️ VillageBill
+                VillageBill
               </h1>
               <span className="contract-pill" title={CONTRACT_ID}>
                 {CONTRACT_ID}
@@ -265,9 +265,9 @@ export default function App() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
                   <div style={{ flex: 1, minWidth: 0, fontSize: 9 }}>
                     <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Player:</div>
-                    <strong style={{ 
-                      color: "#27ae60", 
-                      fontFamily: "var(--mono)", 
+                    <strong style={{
+                      color: "#27ae60",
+                      fontFamily: "var(--mono)",
                       fontSize: 9,
                       display: "block",
                       overflow: "hidden",
@@ -277,7 +277,7 @@ export default function App() {
                       {accountId}
                     </strong>
                   </div>
-                  <button onClick={handleDisconnect} style={{...miniBtnStyle, flexShrink: 0, alignSelf: "flex-start"}}>
+                  <button onClick={handleDisconnect} style={{ ...miniBtnStyle, flexShrink: 0, alignSelf: "flex-start" }}>
                     Exit
                   </button>
                 </div>
