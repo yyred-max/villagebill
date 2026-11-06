@@ -20,6 +20,7 @@ import {
   claimBadge,
   getUserStats,
   getLeaderboard,
+  getNftBadges,
   friendlyError,
   type Group,
   type UserStats,
@@ -54,6 +55,9 @@ export default function App() {
   // Quick pay loading state for the Selected Group Details HUD
   const [quickPayLoading, setQuickPayLoading] = useState(false);
   const [quickPayMsg, setQuickPayMsg] = useState<string | null>(null);
+
+  // Badge claim status tracking
+  const [hasClaimedBadge, setHasClaimedBadge] = useState(false);
 
   // ── Wallet Init & Redirection Handling ──────────────────────────────
   useEffect(() => {
@@ -126,6 +130,28 @@ export default function App() {
       fetchLeaderboard();
     }
   }, [selector, accountId, fetchUserStats, fetchLeaderboard]);
+
+  // ── Check Badge Claim Status ───────────────────────────────────────
+  const checkBadgeClaimStatus = useCallback(async () => {
+    if (!selector || !accountId || !selectedGroupId) {
+      setHasClaimedBadge(false);
+      return;
+    }
+
+    try {
+      const badges = await getNftBadges(selector, accountId);
+      const tokenId = `badge-${selectedGroupId}-${accountId}`;
+      const claimed = badges.some((badge) => badge.token_id === tokenId);
+      setHasClaimedBadge(claimed);
+    } catch (err) {
+      console.error("Failed to check badge claim status:", err);
+      setHasClaimedBadge(false);
+    }
+  }, [selector, accountId, selectedGroupId]);
+
+  useEffect(() => {
+    checkBadgeClaimStatus();
+  }, [checkBadgeClaimStatus]);
 
   // ── Wallet Handlers ────────────────────────────────────────────────
   const handleConnect = async (walletId: "meteor-wallet" | "my-near-wallet" = "meteor-wallet") => {
@@ -418,25 +444,41 @@ export default function App() {
                   {/* Claim NFT Badge button if group is settled */}
                   {selectedGroup.status === "Settled" && myMembership && myMembership.paid && (
                     <div style={{ marginTop: 6 }}>
-                      <button
-                        onClick={async () => {
-                          if (!selector) return;
-                          try {
-                            await claimBadge(selector, selectedGroup.id);
-                            alert("🎖️ NFT Badge claimed successfully!");
-                            fetchUserStats();
-                          } catch (err) {
-                            alert(friendlyError(err));
-                          }
-                        }}
-                        style={{
-                          ...hudBtnPrimary,
-                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          border: "2px solid #F0D9A8",
-                        }}
-                      >
-                        🎖️ Claim NFT Badge
-                      </button>
+                      {hasClaimedBadge ? (
+                        <button
+                          disabled
+                          style={{
+                            ...hudBtnPrimary,
+                            background: "#27ae60",
+                            border: "2px solid #F0D9A8",
+                            cursor: "not-allowed",
+                            opacity: 0.9,
+                          }}
+                        >
+                          ✅ Badge Claimed
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            if (!selector) return;
+                            try {
+                              await claimBadge(selector, selectedGroup.id);
+                              setHasClaimedBadge(true);
+                              alert("🎖️ NFT Badge claimed successfully!");
+                              fetchUserStats();
+                            } catch (err) {
+                              alert(friendlyError(err));
+                            }
+                          }}
+                          style={{
+                            ...hudBtnPrimary,
+                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            border: "2px solid #F0D9A8",
+                          }}
+                        >
+                          🎖️ Claim NFT Badge
+                        </button>
+                      )}
                     </div>
                   )}
                 </>
