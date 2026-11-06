@@ -92,7 +92,8 @@ impl Contract {
     // F3: Menambah anggota dan porsi
     pub fn add_member(&mut self, group_id: u64, member: AccountId, share: U128) {
         let caller = env::predecessor_account_id();
-        let mut group = self.groups.get(&group_id).expect("GroupNotFound").clone();
+        assert!(self.groups.contains_key(&group_id), "GroupNotFound");
+        let mut group = self.groups.get(&group_id).unwrap().clone();
 
         assert_eq!(caller, group.owner, "NotOwner");
         assert_eq!(group.status, GroupStatus::Open, "GroupSettled");
@@ -108,12 +109,14 @@ impl Contract {
     // F4: Mengubah porsi (hanya jika belum bayar)
     pub fn update_share(&mut self, group_id: u64, member: AccountId, new_share: U128) {
         let caller = env::predecessor_account_id();
-        let mut group = self.groups.get(&group_id).expect("GroupNotFound").clone();
+        assert!(self.groups.contains_key(&group_id), "GroupNotFound");
+        let mut group = self.groups.get(&group_id).unwrap().clone();
 
         assert_eq!(caller, group.owner, "NotOwner");
         assert_eq!(group.status, GroupStatus::Open, "GroupSettled");
 
-        let m = group.members.get_mut(&member).expect("NotAMember");
+        assert!(group.members.contains_key(&member), "NotAMember");
+        let m = group.members.get_mut(&member).unwrap();
         assert!(!m.paid, "AlreadyPaid");
 
         m.share = new_share;
@@ -126,10 +129,12 @@ impl Contract {
         let caller = env::predecessor_account_id();
         let deposit = env::attached_deposit();
         
-        let mut group = self.groups.get(&group_id).expect("GroupNotFound").clone();
+        assert!(self.groups.contains_key(&group_id), "GroupNotFound");
+        let mut group = self.groups.get(&group_id).unwrap().clone();
         assert_eq!(group.status, GroupStatus::Open, "GroupSettled");
 
-        let member = group.members.get_mut(&caller).expect("NotAMember");
+        assert!(group.members.contains_key(&caller), "NotAMember");
+        let member = group.members.get_mut(&caller).unwrap();
         assert!(!member.paid, "AlreadyPaid");
         
         let required_amount = NearToken::from_yoctonear(member.share.0);
@@ -170,7 +175,8 @@ impl Contract {
 
     // View functions
     pub fn get_group(&self, group_id: u64) -> Group {
-        self.groups.get(&group_id).expect("GroupNotFound").clone()
+        assert!(self.groups.contains_key(&group_id), "GroupNotFound");
+        self.groups.get(&group_id).unwrap().clone()
     }
 
     pub fn get_groups(&self) -> Vec<Group> {
@@ -180,11 +186,13 @@ impl Contract {
     // F8: Claim NFT Badge
     pub fn claim_badge(&mut self, group_id: u64) -> String {
         let caller = env::predecessor_account_id();
-        let group = self.groups.get(&group_id).expect("GroupNotFound");
+        assert!(self.groups.contains_key(&group_id), "GroupNotFound");
+        let group = self.groups.get(&group_id).unwrap();
         
         // Validation
         assert_eq!(group.status, GroupStatus::Settled, "GroupNotSettled");
-        let member = group.members.get(&caller).expect("NotAMember");
+        assert!(group.members.contains_key(&caller), "NotAMember");
+        let member = group.members.get(&caller).unwrap();
         assert!(member.paid, "UserHasNotPaid");
         
         let token_id = format!("badge-{}-{}", group_id, caller);

@@ -58,6 +58,7 @@ export default function App() {
 
   // Badge claim status tracking
   const [hasClaimedBadge, setHasClaimedBadge] = useState(false);
+  const [isClaimingBadge, setIsClaimingBadge] = useState(false);
 
   // ── Wallet Init & Redirection Handling ──────────────────────────────
   useEffect(() => {
@@ -214,12 +215,15 @@ export default function App() {
     setQuickPayLoading(true);
     setQuickPayMsg(null);
     try {
+      console.log("Quick Pay initiated:", { groupId: selectedGroup.id, share: myMembership.share });
       await payShare(selector, selectedGroup.id, myMembership.share);
       setQuickPayMsg("✅ Paid successfully!");
       fetchGroups();
       fetchUserStats();
       fetchLeaderboard();
     } catch (err) {
+      console.error("Quick Pay Error:", JSON.stringify(err, null, 2));
+      console.error("Quick Pay Error Object:", err);
       setQuickPayMsg(`❌ ${friendlyError(err)}`);
     } finally {
       setQuickPayLoading(false);
@@ -468,23 +472,31 @@ export default function App() {
                       ) : (
                         <button
                           onClick={async () => {
-                            if (!selector) return;
+                            if (!selector || isClaimingBadge) return;
+                            setIsClaimingBadge(true);
                             try {
+                              console.log("Claim Badge initiated:", { groupId: selectedGroup.id, accountId });
                               await claimBadge(selector, selectedGroup.id);
                               setHasClaimedBadge(true);
                               alert("🎖️ NFT Badge claimed successfully!");
                               fetchUserStats();
                             } catch (err) {
+                              console.error("Claim Badge Error:", JSON.stringify(err, null, 2));
+                              console.error("Claim Badge Error Object:", err);
                               alert(friendlyError(err));
+                            } finally {
+                              setIsClaimingBadge(false);
                             }
                           }}
+                          disabled={isClaimingBadge}
                           style={{
                             ...hudBtnPrimary,
-                            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            background: isClaimingBadge ? "#666" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                             border: "2px solid #F0D9A8",
+                            cursor: isClaimingBadge ? "not-allowed" : "pointer",
                           }}
                         >
-                          🎖️ Claim NFT Badge
+                          {isClaimingBadge ? "⏳ Claiming..." : "🎖️ Claim NFT Badge"}
                         </button>
                       )}
                     </div>

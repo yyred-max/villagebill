@@ -66,12 +66,20 @@ export default function AddMember({ selector, groups, onSuccess, embedded }: Pro
     setLoading(true);
     try {
       const yocto = nearToYocto(share);
+      console.log("AddMember initiated:", {
+        groupId: Number(groupId),
+        member: member,
+        shareNEAR: share,
+        shareYocto: yocto,
+      });
       await addMember(selector, Number(groupId), member, yocto);
       setStatus(`✅ Added ${member} with share of ${share} NEAR`);
       setMember("");
       setShare("");
       onSuccess();
     } catch (err) {
+      console.error("AddMember Error:", JSON.stringify(err, null, 2));
+      console.error("AddMember Error Object:", err);
       setError(friendlyError(err));
     } finally {
       setLoading(false);

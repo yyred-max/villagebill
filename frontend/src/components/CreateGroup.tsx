@@ -44,11 +44,14 @@ export default function CreateGroup({ selector, accountId, onSuccess, embedded }
 
     setLoading(true);
     try {
+      console.log("CreateGroup initiated:", { name: trimmed });
       await createGroup(selector, trimmed);
       setStatus(`✅ Group "${trimmed}" created!`);
       setGroupName("");
       onSuccess();
     } catch (err) {
+      console.error("CreateGroup Error:", JSON.stringify(err, null, 2));
+      console.error("CreateGroup Error Object:", err);
       setError(friendlyError(err));
     } finally {
       setLoading(false);

@@ -56,6 +56,7 @@ export default function PayShare({ selector, accountId, groups, onSuccess, embed
       return;
     }
     if (!selectedGroup || !myMembership) return;
+    if (loading) return; // Prevent double-click
 
     setError(null);
     setStatus(null);
@@ -63,12 +64,19 @@ export default function PayShare({ selector, accountId, groups, onSuccess, embed
 
     try {
       // deposit must exactly equal the member's share (yoctoNEAR)
+      console.log("PayShare initiated:", {
+        groupId: selectedGroup.id,
+        share: myMembership.share,
+        shareNEAR: yoctoToNear(myMembership.share),
+      });
       await payShare(selector, selectedGroup.id, myMembership.share);
       setStatus(
         `✅ Payment of ${yoctoToNear(myMembership.share)} NEAR sent to group owner!`
       );
       onSuccess(); // refresh group data
     } catch (err) {
+      console.error("PayShare Error:", JSON.stringify(err, null, 2));
+      console.error("PayShare Error Object:", err);
       setError(friendlyError(err));
     } finally {
       setLoading(false);

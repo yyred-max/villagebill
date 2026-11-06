@@ -256,12 +256,18 @@ export async function payShare(
   groupId: number,
   depositYocto: string,
 ) {
-  return callMethod(selector, "pay_share", { group_id: groupId }, BigInt(depositYocto));
+  // Ensure depositYocto is a valid string representation of yoctoNEAR
+  // Convert to BigInt to validate and ensure precision
+  const yoctoAmount = BigInt(depositYocto);
+  console.log(`payShare: group=${groupId}, deposit=${yoctoAmount.toString()} yoctoNEAR`);
+  
+  return callMethod(selector, "pay_share", { group_id: groupId }, yoctoAmount);
 }
 
 export async function claimBadge(
   selector: WalletSelector,
   groupId: number,
 ) {
+  console.log(`claimBadge: group=${groupId}`);
   return callMethod(selector, "claim_badge", { group_id: groupId });
 }
