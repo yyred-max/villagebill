@@ -24,7 +24,7 @@ export default class VillageScene extends Phaser.Scene {
   private emptyStateText?: Phaser.GameObjects.Text;
   private terrainLayer?: Phaser.GameObjects.Group;
   private decorations: Phaser.GameObjects.GameObject[] = [];
-  private animals: Phaser.GameObjects.Container[] = [];
+  private animals: Phaser.GameObjects.Image[] = [];
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
   private camStart = { x: 0, y: 0 };
@@ -50,6 +50,10 @@ export default class VillageScene extends Phaser.Scene {
 
     for (let i = 1; i <= 8; i++) {
       this.load.image(`tree-${i}`, `/assets/tree-${i}.png`);
+    }
+
+    for (let i = 1; i <= 5; i++) {
+      this.load.image(`fauna-${i}`, `/assets/fauna-${i}.png`);
     }
   }
 
@@ -155,75 +159,56 @@ export default class VillageScene extends Phaser.Scene {
   // ANIMALS
   // ─────────────────────────────────────────────
   private spawnAnimals() {
-    this.animals.forEach((a) => a.destroy());
+    this.animals.forEach((animal) => animal.destroy());
     this.animals = [];
 
-    const width = this.worldWidth;
-    const height = this.worldHeight;
+    const faunaKeys = [
+      "fauna-1",
+      "fauna-2",
+      "fauna-3",
+      "fauna-4",
+      "fauna-5",
+    ];
 
-    // Chickens
-    for (let i = 0; i < 5; i++) {
-      const startX = Phaser.Math.Between(100, width - 100);
-      const startY = Phaser.Math.Between(100, height - 100);
+    faunaKeys.forEach((key) => {
+      const startX = Phaser.Math.Between(100, this.worldWidth - 100);
+      const startY = Phaser.Math.Between(100, this.worldHeight - 100);
 
-      const chicken = this.add.container(startX, startY);
-      chicken.setDepth(4);
+      const animal = this.add.image(startX, startY, key);
+      animal.setOrigin(0.5, 1);
 
-      const body = this.add.ellipse(0, 0, 18, 14, 0xffffff);
-      const head = this.add.circle(10, -4, 7, 0xffffff);
-      const beak = this.add.triangle(17, -4, 0, 0, -7, -3, -7, 3, 0xff7043);
-      const comb = this.add.triangle(10, -11, 0, 0, -4, 5, 4, 5, 0xe53935);
-      const eye = this.add.circle(12, -5, 1.5, 0x212121);
-      const leg = this.add.rectangle(0, 9, 3, 6, 0xffb74d);
+      // Tinggi tampilan disamakan; lebar mengikuti rasio gambar.
+      const displayHeight = 40;
+      animal.setDisplaySize(
+        (animal.width / animal.height) * displayHeight,
+        displayHeight
+      );
 
-      chicken.add([body, head, beak, comb, eye, leg]);
-      this.animals.push(chicken);
+      animal.setDepth(startY);
+      this.animals.push(animal);
 
       this.tweens.add({
-        targets: chicken,
-        x: startX + Phaser.Math.Between(-180, 180),
-        y: startY + Phaser.Math.Between(-50, 50),
-        duration: Phaser.Math.Between(3500, 6500),
+        targets: animal,
+        x: Phaser.Math.Clamp(
+          startX + Phaser.Math.Between(-140, 140),
+          40,
+          this.worldWidth - 40
+        ),
+        y: Phaser.Math.Clamp(
+          startY + Phaser.Math.Between(-40, 40),
+          40,
+          this.worldHeight - 40
+        ),
+        duration: Phaser.Math.Between(4500, 7500),
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
-        onYoyo: () => chicken.setScale(chicken.scaleX * -1, 1),
-        onRepeat: () => chicken.setScale(Math.abs(chicken.scaleX), 1),
+        onUpdate: () => animal.setDepth(animal.y),
+        onYoyo: () => animal.setFlipX(true),
+        onRepeat: () => animal.setFlipX(false),
       });
-    }
-
-    // Cows
-    for (let i = 0; i < 3; i++) {
-      const startX = Phaser.Math.Between(120, width - 120);
-      const startY = Phaser.Math.Between(120, height - 120);
-
-      const cow = this.add.container(startX, startY);
-      cow.setDepth(4);
-
-      const body = this.add.ellipse(0, 0, 36, 22, 0xf5f5f5);
-      const spot1 = this.add.ellipse(-8, -2, 10, 8, 0x424242);
-      const spot2 = this.add.ellipse(10, 3, 8, 6, 0x424242);
-      const head = this.add.ellipse(20, -4, 16, 14, 0xf5f5f5);
-      const hornL = this.add.triangle(16, -14, 0, 0, -4, 6, 4, 6, 0xffecb3);
-      const hornR = this.add.triangle(24, -14, 0, 0, -4, 6, 4, 6, 0xffecb3);
-      const eye = this.add.circle(23, -6, 2, 0x212121);
-      const leg1 = this.add.rectangle(-10, 14, 5, 10, 0x424242);
-      const leg2 = this.add.rectangle(8, 14, 5, 10, 0x424242);
-
-      cow.add([body, spot1, spot2, head, hornL, hornR, eye, leg1, leg2]);
-      this.animals.push(cow);
-
-      this.tweens.add({
-        targets: cow,
-        x: startX + Phaser.Math.Between(-140, 140),
-        duration: Phaser.Math.Between(5000, 8500),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
-    }
+    });
   }
-
   // ─────────────────────────────────────────────
   // CAMERA
   // ─────────────────────────────────────────────
