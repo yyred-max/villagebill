@@ -2,10 +2,6 @@ use near_sdk::json_types::U128;
 use near_sdk::{env, near, AccountId, PanicOnDefault, Promise, NearToken};
 use near_sdk::store::IterableMap;
 use std::collections::HashMap;
-use near_contract_standards::non_fungible_token::metadata::{
-    NFTContractMetadata, TokenMetadata, NFT_METADATA_SPEC,
-};
-use near_contract_standards::non_fungible_token::{Token, TokenId};
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -118,7 +114,7 @@ impl Contract {
         assert_eq!(group.status, GroupStatus::Open, "GroupSettled");
 
         let m = group.members.get_mut(&member).expect("NotAMember");
-        assert_eq!(m.paid, false, "AlreadyPaid");
+        assert!(!m.paid, "AlreadyPaid");
 
         m.share = new_share;
         self.groups.insert(group_id, group);
@@ -134,9 +130,14 @@ impl Contract {
         assert_eq!(group.status, GroupStatus::Open, "GroupSettled");
 
         let member = group.members.get_mut(&caller).expect("NotAMember");
-        assert_eq!(member.paid, false, "AlreadyPaid");
-        assert_eq!(deposit, NearToken::from_yoctonear(member.share.0), "IncorrectAmount");
+        assert!(!member.paid, "AlreadyPaid");
+        
+        let required_amount = NearToken::from_yoctonear(member.share.0);
+        assert_eq!(deposit, required_amount, "IncorrectAmount");
 
+        let payment_amount = member.share.0;
+        let owner = group.owner.clone();
+        
         // Tandai sudah bayar
         member.paid = true;
         
@@ -145,16 +146,13 @@ impl Contract {
         
         // Update total paid stat
         let mut stats = self.get_or_create_stats(&caller);
-        stats.total_paid = U128(stats.total_paid.0 + member.share.0);
+        stats.total_paid = U128(stats.total_paid.0 + payment_amount);
         self.user_stats.insert(caller.clone(), stats);
         
-        self.groups.insert(group_id, group.clone());
-
         // Cek apakah semua anggota sudah bayar? Jika ya, ubah status menjadi Settled
         let all_paid = group.members.values().all(|m| m.paid);
         if all_paid {
             group.status = GroupStatus::Settled;
-            self.groups.insert(group_id, group.clone());
             
             // Award 50 XP to all paid members
             for member_id in group.members.keys() {
@@ -162,9 +160,12 @@ impl Contract {
                 self.increment_stat(member_id, "groups_completed");
             }
         }
+        
+        // Save group state once
+        self.groups.insert(group_id, group);
 
         // Teruskan dana ke owner
-        Promise::new(group.owner).transfer(deposit)
+        Promise::new(owner).transfer(deposit)
     }
 
     // View functions
