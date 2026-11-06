@@ -262,14 +262,22 @@ export default function App() {
           <div style={{ marginTop: 8, borderTop: "1px solid rgba(240, 217, 168, 0.25)", paddingTop: 8 }}>
             {accountId ? (
               <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ fontSize: 9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                    <span style={{ color: "rgba(255,255,255,0.6)" }}>Player: </span>
-                    <strong style={{ color: "#27ae60", fontFamily: "var(--mono)", fontSize: 9 }}>
-                      {accountId.length > 16 ? `${accountId.slice(0, 14)}…` : accountId}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 9 }}>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>Player:</div>
+                    <strong style={{ 
+                      color: "#27ae60", 
+                      fontFamily: "var(--mono)", 
+                      fontSize: 9,
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {accountId}
                     </strong>
                   </div>
-                  <button onClick={handleDisconnect} style={{...miniBtnStyle, flexShrink: 0}}>
+                  <button onClick={handleDisconnect} style={{...miniBtnStyle, flexShrink: 0, alignSelf: "flex-start"}}>
                     Exit
                   </button>
                 </div>

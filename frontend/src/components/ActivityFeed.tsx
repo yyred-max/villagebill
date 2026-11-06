@@ -250,7 +250,7 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
       {!isCollapsed && (
         <>
           {activities.length === 0 ? (
-            <div style={{ padding: "12px", textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 12 }}>
+            <div style={{ padding: "8px 12px", textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 11 }}>
               Listening for village events...
             </div>
           ) : (
@@ -359,7 +359,7 @@ const listStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 6,
-  maxHeight: 200,
+  maxHeight: 250,
   overflowY: "auto",
   paddingRight: 6,
   marginTop: 6,
