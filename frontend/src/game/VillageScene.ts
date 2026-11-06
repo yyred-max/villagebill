@@ -11,9 +11,6 @@ import type { Group } from "../lib/contract";
 const T = {
   // Grass
   GRASS_1: 0,
-  GRASS_2: 1,
-  GRASS_3: 2,
-
   // Path / dirt
   PATH: 33,
 } as const;
@@ -95,9 +92,8 @@ export default class VillageScene extends Phaser.Scene {
         const y = row * this.tile + this.tile / 2;
 
         let frame: number = T.GRASS_1;
-        if ((col + row) % 3 === 0) frame = T.GRASS_2;
-        if ((col + row) % 5 === 0) frame = T.GRASS_3;
 
+        // Path di tengah
         if (row >= pathRowStart && row <= pathRowEnd) {
           frame = T.PATH;
         }
@@ -121,10 +117,8 @@ export default class VillageScene extends Phaser.Scene {
     const height = this.worldHeight;
     const rng = (min: number, max: number) => Phaser.Math.Between(min, max);
 
-    const treeKeys = Array.from(
-      { length: 8 },
-      (_, index) => `tree-${index + 1}`
-    );
+    // Batasi hanya 4 pohon pertama agar tidak ada gambar kayu tumbang
+    const treeKeys = ['tree-1', 'tree-2', 'tree-3', 'tree-4'];
 
     const spacingX = 170;
     const spacingY = 150;
@@ -136,14 +130,26 @@ export default class VillageScene extends Phaser.Scene {
         const x = 60 + col * spacingX + rng(-15, 15);
         const y = 60 + row * spacingY + rng(-15, 15);
 
+        // Kosongkan area jalan di tengah
         if (Math.abs(y - height / 2) < 110) continue;
+
+        // Sisakan beberapa celah (probabilitas kosong 35%)
         if (rng(0, 100) < 35) continue;
 
-        const key = Phaser.Utils.Array.GetRandom(treeKeys);
-        const tree = this.add.image(x, y, key);
+        // Pilih pohon acak, pastikan tidak sama dengan pohon sebelumnya
+        let key = Phaser.Utils.Array.GetRandom(treeKeys);
+        if (this.decorations.length > 0) {
+          const lastTree = this.decorations[this.decorations.length - 1] as Phaser.GameObjects.Image;
+          if (lastTree && lastTree.texture.key === key) {
+            const filteredKeys = treeKeys.filter(k => k !== key);
+            key = Phaser.Utils.Array.GetRandom(filteredKeys);
+          }
+        }
 
+        const tree = this.add.image(x, y, key);
         tree.setOrigin(0.5, 1);
-        tree.setDisplaySize(tree.width * (96 / tree.height), 96);
+        // Perkecil ukuran pohon dari 96 menjadi 64 agar lebih proporsional
+        tree.setDisplaySize(tree.width * (64 / tree.height), 64);
         tree.setDepth(y);
 
         this.decorations.push(tree);
