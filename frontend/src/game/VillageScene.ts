@@ -65,6 +65,10 @@ export default class VillageScene extends Phaser.Scene {
       frameHeight: 16,
     });
     this.load.image("complete-house", "/assets/village-logo.png");
+
+    for (let i = 1; i <= 8; i++) {
+      this.load.image(`tree-${i}`, `/assets/tree-${i}.png`);
+    }
   }
 
   create() {
