@@ -39,6 +39,24 @@ function yoctoToNear(yocto: string): string {
   }
 }
 
+// Get icon based on event type
+function getIcon(type: ActivityItem["type"]): string {
+  switch (type) {
+    case "group_created":
+      return "🏠";
+    case "member_paid":
+      return "💸";
+    case "group_settled":
+      return "🏆";
+    case "member_added":
+      return "👥";
+    case "share_updated":
+      return "📝";
+    default:
+      return "📌";
+  }
+}
+
 interface Props {
   selector: WalletSelector;
   accountId: string | null;
@@ -259,6 +277,9 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
             const isRelatedToMe =
               accountId &&
               (item.description.includes(accountId) || item.title.includes(accountId));
+            
+            // Combine title and description into one line
+            const combinedText = `${item.title} • ${item.description}`;
 
             return (
               <div
@@ -269,23 +290,24 @@ export default function ActivityFeed({ selector, accountId, onGroupsFetched }: P
                   background: item.highlight ? "var(--accent-bg)" : "var(--code-bg)",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={badgeStyle(item.type)}>{item.badge}</span>
-                    <strong style={{ fontSize: 13, color: "var(--text-h)" }}>{item.title}</strong>
-                  </div>
-                  <span style={{ fontSize: 10, color: "var(--text)", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
-                    {item.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                {/* Row 1: Icon + Combined Text */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>{getIcon(item.type)}</span>
+                  <span style={{ 
+                    fontSize: 11, 
+                    color: isRelatedToMe ? "var(--accent)" : "var(--text-h)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flex: 1
+                  }}>
+                    {combinedText}
                   </span>
                 </div>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text)" }}>
-                  {item.description}
-                </p>
-                {isRelatedToMe && (
-                  <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 600, marginTop: 2, display: "inline-block" }}>
-                    ⭐ Involves your account
-                  </span>
-                )}
+                {/* Row 2: Timestamp */}
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontFamily: "var(--mono)", textAlign: "right" }}>
+                  {item.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </div>
               </div>
             );
           })}
@@ -358,7 +380,7 @@ const pulseDot = (active: boolean): React.CSSProperties => ({
 const listStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 6,
+  gap: 0,
   maxHeight: 250,
   overflowY: "auto",
   paddingRight: 6,
@@ -369,45 +391,8 @@ const itemCardStyle: React.CSSProperties = {
   border: "1px solid rgba(255, 255, 255, 0.15)",
   borderRadius: 6,
   padding: "6px 8px",
+  marginBottom: 8,
   transition: "all 0.2s ease",
   background: "rgba(0, 0, 0, 0.3)",
-};
-
-const badgeStyle = (type: ActivityItem["type"]): React.CSSProperties => {
-  let bg = "var(--border)";
-  let color = "var(--text-h)";
-
-  switch (type) {
-    case "group_created":
-      bg = "rgba(170, 59, 255, 0.2)";
-      color = "#aa3bff";
-      break;
-    case "member_paid":
-      bg = "rgba(39, 174, 96, 0.2)";
-      color = "#27ae60";
-      break;
-    case "group_settled":
-      bg = "rgba(241, 196, 15, 0.25)";
-      color = "#d68910";
-      break;
-    case "member_added":
-      bg = "rgba(52, 152, 219, 0.2)";
-      color = "#2980b9";
-      break;
-    case "share_updated":
-      bg = "rgba(230, 126, 34, 0.2)";
-      color = "#d35400";
-      break;
-  }
-
-  return {
-    fontSize: 9,
-    fontWeight: 700,
-    padding: "2px 6px",
-    borderRadius: 4,
-    background: bg,
-    color,
-    letterSpacing: 0.3,
-  };
 };
 
