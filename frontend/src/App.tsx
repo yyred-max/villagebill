@@ -1,14 +1,5 @@
 /**
  * App.tsx — Full-Screen Web3 Game Map with Responsive Floating HUD (PRD §5, §7 F11).
- *
- * Responsive HUD Architecture:
- *  - Full-Screen Phaser 3 Canvas at z-index: 0
- *  - Responsive HUD Overlay at z-index: 10 (pointer-events: none, panels: pointer-events: auto)
- *  - Top-Left: Scaled Logo, Contract ID, and Wallet Controls
- *  - Top-Right: Mobile Hamburger Button (☰ HUD) to toggle drawer
- *  - Bottom-Left: Collapsible Activity Feed (auto-collapsed on mobile screens)
- *  - Center-Bottom: Selected Building Details Card
- *  - Right-Side: Floating Sidebar on Desktop, Slide-In Drawer on Mobile (<1024px)
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -232,18 +223,14 @@ export default function App() {
 
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-      {/* ──────────────────────────────────────────────────────────── */}
-      {/* 1. FULL-SCREEN PHASER 3 VILLAGE MAP (Z-INDEX 0)              */}
-      {/* ──────────────────────────────────────────────────────────── */}
+      {/* 1. FULL-SCREEN PHASER 3 VILLAGE MAP */}
       <VillageMap
         groups={groups}
         selectedGroupId={selectedGroupId}
         onSelectGroup={(id) => setSelectedGroupId(id)}
       />
 
-      {/* ──────────────────────────────────────────────────────────── */}
-      {/* 2. FLOATING GAME HUD LAYER (Z-INDEX 10)                      */}
-      {/* ──────────────────────────────────────────────────────────── */}
+      {/* 2. FLOATING GAME HUD LAYER */}
       <div className="game-hud-overlay">
         {/* ── TOP-LEFT: HEADER & WALLET PANEL ── */}
         <div className="hud-top-left">
@@ -286,18 +273,40 @@ export default function App() {
                   </button>
                 </div>
                 {userStats && (
-                  <div style={{ marginTop: 6, display: "flex", gap: 12, fontSize: 9, color: "var(--gold)" }}>
+                  <div style={{ marginTop: 6, display: "flex", gap: 12, fontSize: 9, color: "var(--gold)", marginBottom: 4 }}>
                     <span>⭐ XP: <strong>{userStats.xp}</strong></span>
                     <span>🏆 Level: <strong>{Math.floor(userStats.xp / 100) + 1}</strong></span>
                   </div>
                 )}
+
+                {/* TOMBOL FAUCET (JIKA SUDAH TERHUBUNG) */}
+                <a
+                  href="https://near-faucet.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    padding: "4px",
+                    borderRadius: 3,
+                    border: "1px solid var(--gold)",
+                    background: "rgba(255,255,255,0.1)",
+                    color: "var(--cream)",
+                    fontSize: 9,
+                    textDecoration: "none",
+                    fontFamily: "var(--mono)",
+                    textAlign: "center",
+                    marginTop: 4,
+                  }}
+                >
+                  🚰 Top up Testnet NEAR
+                </a>
               </>
             ) : (
               <div>
                 <p style={{ margin: "0 0 4px", fontSize: 10, color: "rgba(255,255,255,0.7)" }}>
                   Connect NEAR Testnet:
                 </p>
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
                   <button onClick={() => handleConnect("meteor-wallet")} style={hudBtnPrimary}>
                     ☄️ Meteor
                   </button>
@@ -305,6 +314,29 @@ export default function App() {
                     🌐 MyNear
                   </button>
                 </div>
+
+                {/* TOMBOL FAUCET (JIKA BELUM TERHUBUNG) */}
+                <a
+                  href="https://near-faucet.io/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    padding: "5px 10px",
+                    borderRadius: 4,
+                    border: "2px solid var(--gold)",
+                    background: "rgba(76, 175, 80, 0.8)",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: "bold",
+                    textDecoration: "none",
+                    fontFamily: "var(--mono)",
+                    textAlign: "center",
+                    boxShadow: "0 3px 0 rgba(0,0,0,0.3)",
+                  }}
+                >
+                  🚰 Get Testnet NEAR
+                </a>
               </div>
             )}
           </div>
