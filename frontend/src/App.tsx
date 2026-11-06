@@ -281,7 +281,7 @@ export default function App() {
 
                 {/* TOMBOL FAUCET (JIKA SUDAH TERHUBUNG) */}
                 <a
-                  href="https://near-faucet.io/"
+                  href="https://docs.near.org/getting-started/faucet"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -317,7 +317,7 @@ export default function App() {
 
                 {/* TOMBOL FAUCET (JIKA BELUM TERHUBUNG) */}
                 <a
-                  href="https://near-faucet.io/"
+                  href="https://docs.near.org/getting-started/faucet"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

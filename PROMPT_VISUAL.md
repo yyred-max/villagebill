@@ -1,9 +1,11 @@
-The data is successfully saved in the blockchain (verified via `near view`), but it disappears from the UI when I refresh the page. This means there is a bug in the React frontend's data fetching logic.
+Now that the app is working, let's do a quick Security Audit of the smart contract before submitting to the hackathon.
 
-Please fix `frontend/src/App.tsx` and `frontend/src/lib/contract.ts`:
+Please review `contracts/splitbill-near/src/lib.rs` and check for vulnerabilities based on the following criteria:
 
-1. **Ensure Data Fetching on Load**: The `useEffect` that calls `getGroups` must run as soon as the component mounts, AND again whenever the `selector` state or `accountId` changes (e.g., after wallet connection). Add `selector` and `accountId` to the `useEffect` dependency array if they are used inside.
-2. **Error Handling**: Add a `console.error` inside the `catch` block of `getGroups` so we can see why it fails in the browser console.
-3. **Polling/Refresh**: The ActivityFeed already polls every 10s, but ensure the main `groups` state in `App.tsx` is also updated when new data arrives.
+1. **Access Control**: Verify that critical functions (`add_member`, `update_share`, `settle_group` if it exists) can ONLY be called by the group owner.
+2. **Financial Logic**: Verify that `pay_share` correctly asserts the deposit amount and doesn't allow users to pay less than their share, or double-pay.
+3. **Reentrancy**: Verify that state updates (e.g., `member.paid = true`) happen BEFORE external calls (e.g., `Promise::new().transfer()`).
+4. **Overflow/Underflow**: Ensure there are no unsafe math operations with `u128` or `NearToken`.
+5. **Panic Handling**: Ensure that `.unwrap()` or `.expect()` are used safely without exposing sensitive state.
 
-Fix the state management in `App.tsx` so that refreshing the page immediately loads the groups from the blockchain.
+If you find any potential vulnerabilities, fix them. If everything looks secure, just tell me "The contract is secure" and explain why.
