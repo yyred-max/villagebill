@@ -14,19 +14,8 @@ const T = {
   GRASS_2: 1,
   GRASS_3: 2,
 
-  // Trees (perkiraan dari sheet kamu)
-  TREE_ORANGE: 4,
-  TREE_PINE: 5,
-  TREE_BUSH: 6,
-  TREE_TALL_PINE: 7,
-  TREE_ROUND: 8,
-  TREE_YELLOW: 9,
-
   // Path / dirt
   PATH: 33,
-
-  // Building parts (perkiraan)
-  FOUNDATION: 36,
 } as const;
 
 export default class VillageScene extends Phaser.Scene {
@@ -59,8 +48,6 @@ export default class VillageScene extends Phaser.Scene {
     });
     this.load.image("complete-house", "/assets/village-logo.png");
 
-    // PERHATIAN: Pastikan kamu punya file tree-1.png s/d tree-8.png di public/assets/
-    // Jika tidak ada, ganti pemanggilan spritesheet pohon ini dengan Phaser Graphics.
     for (let i = 1; i <= 8; i++) {
       this.load.image(`tree-${i}`, `/assets/tree-${i}.png`);
     }
@@ -111,7 +98,6 @@ export default class VillageScene extends Phaser.Scene {
         if ((col + row) % 3 === 0) frame = T.GRASS_2;
         if ((col + row) % 5 === 0) frame = T.GRASS_3;
 
-        // Path di tengah
         if (row >= pathRowStart && row <= pathRowEnd) {
           frame = T.PATH;
         }
@@ -133,8 +119,7 @@ export default class VillageScene extends Phaser.Scene {
 
     const width = this.worldWidth;
     const height = this.worldHeight;
-    const rng = (min: number, max: number) =>
-      Phaser.Math.Between(min, max);
+    const rng = (min: number, max: number) => Phaser.Math.Between(min, max);
 
     const treeKeys = Array.from(
       { length: 8 },
@@ -151,20 +136,14 @@ export default class VillageScene extends Phaser.Scene {
         const x = 60 + col * spacingX + rng(-15, 15);
         const y = 60 + row * spacingY + rng(-15, 15);
 
-        // Kosongkan area jalan di tengah.
         if (Math.abs(y - height / 2) < 110) continue;
-
-        // Sisakan beberapa celah.
         if (rng(0, 100) < 35) continue;
 
         const key = Phaser.Utils.Array.GetRandom(treeKeys);
         const tree = this.add.image(x, y, key);
 
         tree.setOrigin(0.5, 1);
-        tree.setDisplaySize(
-          tree.width * (96 / tree.height),
-          96
-        );
+        tree.setDisplaySize(tree.width * (96 / tree.height), 96);
         tree.setDepth(y);
 
         this.decorations.push(tree);
@@ -327,14 +306,13 @@ export default class VillageScene extends Phaser.Scene {
       const x = startX + col * cellWidth;
       const y = startY + row * rowHeight;
 
-      this.clearTreesAround(x, y); // Memanggil method dengan benar
+      this.clearTreesAround(x, y);
 
       const container = this.createBuildingObject(group, x, y);
       this.buildingContainers.push(container);
     });
   }
 
-  // ✅ METHOD DIPINDAHKAN KE DALAM CLASS
   private clearTreesAround(x: number, y: number) {
     const houseWidth = 150;
     const houseHeight = 130;
@@ -386,69 +364,168 @@ export default class VillageScene extends Phaser.Scene {
 
     // ── Building by stage ──
     if (stage === 0) {
+      // Stage 0: Empty plot + project sign
       const g = this.add.graphics();
-      g.fillStyle(0x6d4c41, 0.9);
-      g.fillRect(-30, -8, 60, 40);
-      g.lineStyle(2, 0x8d6e63, 1);
-      g.strokeRect(-30, -8, 60, 40);
+
+      // Dirt plot
+      g.fillStyle(0x795548, 1);
+      g.fillRoundedRect(-38, -4, 76, 44, 4);
+      g.lineStyle(2, 0x5d4037, 1);
+      g.strokeRoundedRect(-38, -4, 76, 44, 4);
+
+      // Small wooden sign
+      g.fillStyle(0x6d4c41, 1);
+      g.fillRect(23, -40, 5, 35); // post
+      g.fillStyle(0x8d6e63, 1);
+      g.fillRect(8, -42, 36, 19); // board
+      g.lineStyle(2, 0x4e342e, 1);
+      g.strokeRect(8, -42, 36, 19);
+
       container.add(g);
+
+      const signText = this.add
+        .text(26, -33, "PROJECT", {
+          fontFamily: "monospace",
+          fontSize: "6px",
+          fontStyle: "bold",
+          color: "#fff3cd",
+          align: "center",
+        })
+        .setOrigin(0.5);
+
+      container.add(signText);
     } else if (stage === 1) {
-      if (this.textures.exists("tinytown")) {
-        for (let i = -1; i <= 1; i++) {
-          const t = this.add.image(i * 16, 8, "tinytown", T.FOUNDATION);
-          t.setDisplaySize(18, 18);
-          container.add(t);
-        }
-      } else {
-        const g = this.add.graphics();
-        g.fillStyle(0x78909c, 1);
-        g.fillRect(-32, 0, 64, 28);
-        container.add(g);
-      }
-    } else if (stage === 2) {
+      // Stage 1: Stone foundation + project sign
       const g = this.add.graphics();
+
+      // Stone blocks
+      const stones = [
+        { x: -32, color: 0x78909c },
+        { x: -11, color: 0x90a4ae },
+        { x: 10, color: 0x78909c },
+      ];
+
+      stones.forEach(({ x, color }) => {
+        g.fillStyle(color, 1);
+        g.fillRect(x, 13, 21, 16);
+        g.lineStyle(2, 0x546e7a, 1);
+        g.strokeRect(x, 13, 21, 16);
+      });
+
+      // Small wooden sign stays until completion
+      g.fillStyle(0x6d4c41, 1);
+      g.fillRect(23, -40, 5, 35);
+      g.fillStyle(0x8d6e63, 1);
+      g.fillRect(8, -42, 36, 19);
+      g.lineStyle(2, 0x4e342e, 1);
+      g.strokeRect(8, -42, 36, 19);
+
+      container.add(g);
+
+      const signText = this.add
+        .text(26, -33, "PROJECT", {
+          fontFamily: "monospace",
+          fontSize: "6px",
+          fontStyle: "bold",
+          color: "#fff3cd",
+          align: "center",
+        })
+        .setOrigin(0.5);
+
+      container.add(signText);
+    } else if (stage === 2) {
+      // Stage 2: Walls, red roof frame, and yellow scaffolding
+      const g = this.add.graphics();
+
+      // Stone base
       g.fillStyle(0x78909c, 1);
-      g.fillRect(-32, 10, 64, 20);
-      g.fillStyle(0xffcc80, 1);
-      g.fillRect(-28, -26, 56, 38);
-      g.lineStyle(2, 0x8d6e63, 1);
-      g.strokeRect(-28, -26, 56, 38);
-      g.fillStyle(0x81d4fa, 0.8);
-      g.fillRect(-18, -16, 12, 12);
-      g.fillRect(6, -16, 12, 12);
-      g.lineStyle(3, 0xddaa54, 0.85);
-      g.lineBetween(-36, -34, -36, 28);
-      g.lineBetween(36, -34, 36, 28);
-      g.lineBetween(-36, -18, 36, -18);
+      g.fillRect(-34, 12, 68, 17);
+      g.lineStyle(2, 0x546e7a, 1);
+      g.strokeRect(-34, 12, 68, 17);
+
+      // Wooden walls
+      g.fillStyle(0xc58b52, 1);
+      g.fillRect(-27, -24, 54, 36);
+      g.lineStyle(2, 0x795548, 1);
+      g.strokeRect(-27, -24, 54, 36);
+
+      // Wall planks
+      g.lineStyle(2, 0x9a673d, 1);
+      g.lineBetween(-9, -23, -9, 11);
+      g.lineBetween(9, -23, 9, 11);
+
+      // Window openings
+      g.fillStyle(0x81d4fa, 1);
+      g.fillRect(-21, -14, 12, 12);
+      g.fillRect(9, -14, 12, 12);
+      g.lineStyle(2, 0x6d4c41, 1);
+      g.strokeRect(-21, -14, 12, 12);
+      g.strokeRect(9, -14, 12, 12);
+
+      // Red roof frame
+      g.lineStyle(5, 0xc62828, 1);
+      g.lineBetween(-34, -24, 0, -48);
+      g.lineBetween(0, -48, 34, -24);
+      g.lineStyle(2, 0x7f1d1d, 1);
+      g.lineBetween(-25, -27, 0, -44);
+      g.lineBetween(0, -44, 25, -27);
+
+      // Yellow scaffolding poles
+      g.lineStyle(4, 0xfbc02d, 1);
+      g.lineBetween(-39, -34, -39, 30);
+      g.lineBetween(39, -34, 39, 30);
+      g.lineBetween(-39, -17, 39, -17);
+      g.lineBetween(-39, 3, 39, 3);
+      g.lineBetween(-39, 23, 39, 23);
+
       container.add(g);
     } else {
-      if (this.textures.exists("tinytown")) {
-        for (let i = -1; i <= 1; i++) {
-          const base = this.add.image(i * 16, 14, "tinytown", T.FOUNDATION);
-          base.setDisplaySize(18, 16);
-          container.add(base);
-        }
-      }
-
+      // Stage 3: Completed house
       const g = this.add.graphics();
-      g.fillStyle(0xfff3e0, 1);
-      g.fillRect(-28, -22, 56, 36);
+
+      // Stone foundation
+      g.fillStyle(0x78909c, 1);
+      g.fillRect(-34, 13, 68, 17);
+      g.lineStyle(2, 0x546e7a, 1);
+      g.strokeRect(-34, 13, 68, 17);
+
+      // House walls
+      g.fillStyle(0xffe0b2, 1);
+      g.fillRect(-29, -23, 58, 37);
+      g.lineStyle(2, 0x8d6e63, 1);
+      g.strokeRect(-29, -23, 58, 37);
+
+      // Roof
+      g.fillStyle(0xb71c1c, 1);
+      g.fillTriangle(0, -51, -37, -21, 37, -21);
+      g.lineStyle(2, 0x7f1d1d, 1);
+      g.lineBetween(-37, -21, 37, -21);
+
+      // Windows
       g.fillStyle(0x81d4fa, 1);
-      g.fillRect(-18, -12, 12, 12);
-      g.fillRect(6, -12, 12, 12);
+      g.fillRect(-21, -14, 12, 12);
+      g.fillRect(9, -14, 12, 12);
+      g.lineStyle(2, 0x6d4c41, 1);
+      g.strokeRect(-21, -14, 12, 12);
+      g.strokeRect(9, -14, 12, 12);
+
+      // Door
       g.fillStyle(0x6d4c41, 1);
-      g.fillRect(-8, 0, 16, 22);
-      g.fillStyle(0xc62828, 1);
-      g.fillTriangle(0, -44, -34, -18, 34, -18);
-      g.fillStyle(0xffd700, 1);
-      g.fillRect(-16, -50, 32, 7);
+      g.fillRect(-6, -3, 12, 17);
+      g.lineStyle(2, 0x4e342e, 1);
+      g.strokeRect(-6, -3, 12, 17);
+      g.fillStyle(0xffd54f, 1);
+      g.fillCircle(3, 6, 1.5);
+
       container.add(g);
 
-      const glow = this.add.ellipse(0, -8, 88, 70, 0xffd700, 0.18);
+      // Golden aura
+      const glow = this.add.ellipse(0, -10, 100, 90, 0xffd700, 0.22);
       glow.setBlendMode(Phaser.BlendModes.ADD);
       container.add(glow);
     }
 
+    // Name badge
     const shortName = (group.name ?? "Group").slice(0, 13);
     const label = this.add
       .text(0, -58, `#${group.id} ${shortName}`, {
@@ -462,6 +539,7 @@ export default class VillageScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(label);
 
+    // Status
     const statusText =
       stage === 3
         ? "🏆 COMPLETED"
@@ -486,6 +564,7 @@ export default class VillageScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(badge);
 
+    // Progress bar
     if (stage < 3) {
       const barBg = this.add.rectangle(0, 62, 58, 6, 0x000000, 0.45);
       const barFill = this.add.rectangle(
@@ -500,6 +579,7 @@ export default class VillageScene extends Phaser.Scene {
       container.add([barBg, barFill]);
     }
 
+    // Hit area
     const hit = this.add.rectangle(0, 0, 96, 115, 0x000000, 0);
     hit.setInteractive({ useHandCursor: true });
     container.add(hit);
