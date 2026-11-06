@@ -23,19 +23,15 @@ const T = {
   GRASS_3: 2,
 
   // Trees (perkiraan dari sheet kamu)
-  TREE_ORANGE: 12,
-  TREE_GREEN: 13,
-  TREE_PINE: 14,
-  TREE_ROUND: 15,
-
+  TREE_GREEN: 36,
+  TREE_PINE: 37,
+  TREE_ROUND: 38,
+  TREE_BUSH: 39,
+  ROCK: 72,
   // Path / dirt
-  PATH: 24,
+  PATH: 12,
 
   // Building parts (perkiraan)
-  ROOF_RED: 36,
-  WALL: 48,
-  DOOR: 49,
-  WINDOW: 50,
   FOUNDATION: 60,
 } as const;
 
@@ -139,7 +135,7 @@ export default class VillageScene extends Phaser.Scene {
     const height = this.worldHeight;
     const rng = (a: number, b: number) => Phaser.Math.Between(a, b);
 
-    const treeFrames = [T.TREE_ORANGE, T.TREE_GREEN, T.TREE_PINE, T.TREE_ROUND];
+    const treeFrames = [T.TREE_GREEN, T.TREE_PINE, T.TREE_ROUND, T.TREE_BUSH];
 
     for (let i = 0; i < 28; i++) {
       const x = rng(48, width - 48);

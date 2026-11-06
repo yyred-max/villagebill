@@ -24,6 +24,20 @@ export interface Group {
   status: "Open" | "Settled";
 }
 
+export interface UserStats {
+  xp: number;
+  groups_created: number;
+  groups_completed: number;
+  total_paid: string; // U128
+}
+
+export interface NFTBadge {
+  token_id: string;
+  owner_id: string;
+  group_id: number;
+  group_name: string;
+}
+
 // ── Friendly error messages (PRD §6.3) ───────────────────────────────
 
 const CONTRACT_ERROR_MAP: Record<string, string> = {
@@ -111,6 +125,27 @@ export async function getGroup(
   groupId: number,
 ): Promise<Group> {
   return viewMethod<Group>(selector, "get_group", { group_id: groupId });
+}
+
+export async function getUserStats(
+  selector: WalletSelector,
+  accountId: string,
+): Promise<UserStats> {
+  return viewMethod<UserStats>(selector, "get_user_stats", { account_id: accountId });
+}
+
+export async function getLeaderboard(
+  selector: WalletSelector,
+  limit: number = 5,
+): Promise<Array<[string, UserStats]>> {
+  return viewMethod<Array<[string, UserStats]>>(selector, "get_leaderboard", { limit });
+}
+
+export async function getNftBadges(
+  selector: WalletSelector,
+  accountId: string,
+): Promise<NFTBadge[]> {
+  return viewMethod<NFTBadge[]>(selector, "get_nft_badges", { account_id: accountId });
 }
 
 // ── Change methods (signing required) ────────────────────────────────
@@ -222,4 +257,11 @@ export async function payShare(
   depositYocto: string,
 ) {
   return callMethod(selector, "pay_share", { group_id: groupId }, BigInt(depositYocto));
+}
+
+export async function claimBadge(
+  selector: WalletSelector,
+  groupId: number,
+) {
+  return callMethod(selector, "claim_badge", { group_id: groupId });
 }

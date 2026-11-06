@@ -1,0 +1,11 @@
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\digest_io-6740f76806bd05e4.d: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\io_wrapper.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\reader.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\writer.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\../README.md
+
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\libdigest_io-6740f76806bd05e4.rlib: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\io_wrapper.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\reader.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\writer.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\../README.md
+
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\libdigest_io-6740f76806bd05e4.rmeta: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\io_wrapper.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\reader.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\writer.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\../README.md
+
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\lib.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\io_wrapper.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\reader.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\writer.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\digest-io-0.1.0\src\../README.md:

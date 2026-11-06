@@ -1,0 +1,14 @@
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\serde-95aaba9d910fb07a.d: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs D:\NIER\ HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\build\serde-b9ac65ec5e1be71e\out/private.rs
+
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\libserde-95aaba9d910fb07a.rlib: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs D:\NIER\ HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\build\serde-b9ac65ec5e1be71e\out/private.rs
+
+D:\NIER HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\deps\libserde-95aaba9d910fb07a.rmeta: C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs D:\NIER\ HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\build\serde-b9ac65ec5e1be71e\out/private.rs
+
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs:
+C:\Users\ACER\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs:
+D:\NIER\ HACKATHON\Stellar-meetup\contracts\splitbill-near\target\debug\build\serde-b9ac65ec5e1be71e\out/private.rs:
+
+# env-dep:OUT_DIR=D:\\NIER HACKATHON\\Stellar-meetup\\contracts\\splitbill-near\\target\\debug\\build\\serde-b9ac65ec5e1be71e\\out

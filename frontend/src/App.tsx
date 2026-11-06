@@ -17,8 +17,12 @@ import { initWalletSelector, CONTRACT_ID } from "./lib/near";
 import {
   getGroups,
   payShare,
+  claimBadge,
+  getUserStats,
+  getLeaderboard,
   friendlyError,
   type Group,
+  type UserStats,
 } from "./lib/contract";
 import CreateGroup from "./components/CreateGroup";
 import AddMember from "./components/AddMember";
@@ -27,7 +31,7 @@ import ActivityFeed from "./components/ActivityFeed";
 import VillageMap from "./components/VillageMap";
 import "./App.css";
 
-type SidebarTab = "groups" | "create" | "add_member" | "pay";
+type SidebarTab = "groups" | "create" | "add_member" | "pay" | "leaderboard";
 
 export default function App() {
   const [selector, setSelector] = useState<WalletSelector | null>(null);
@@ -37,6 +41,10 @@ export default function App() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>("groups");
+
+  // XP & Leaderboard
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<Array<[string, UserStats]>>([]);
 
   // Responsive sidebar: default open on desktop (>1024px), closed on mobile/tablet
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -82,6 +90,34 @@ export default function App() {
   useEffect(() => {
     if (selector) fetchGroups();
   }, [selector, fetchGroups]);
+
+  // ── Fetch User Stats & Leaderboard ─────────────────────────────────
+  const fetchUserStats = useCallback(async () => {
+    if (!selector || !accountId) return;
+    try {
+      const stats = await getUserStats(selector, accountId);
+      setUserStats(stats);
+    } catch (err) {
+      console.error("Failed to fetch user stats:", err);
+    }
+  }, [selector, accountId]);
+
+  const fetchLeaderboard = useCallback(async () => {
+    if (!selector) return;
+    try {
+      const data = await getLeaderboard(selector, 5);
+      setLeaderboard(data);
+    } catch (err) {
+      console.error("Failed to fetch leaderboard:", err);
+    }
+  }, [selector]);
+
+  useEffect(() => {
+    if (selector && accountId) {
+      fetchUserStats();
+      fetchLeaderboard();
+    }
+  }, [selector, accountId, fetchUserStats, fetchLeaderboard]);
 
   // ── Wallet Handlers ────────────────────────────────────────────────
   const handleConnect = async (walletId: "meteor-wallet" | "my-near-wallet" = "meteor-wallet") => {
@@ -147,6 +183,8 @@ export default function App() {
       await payShare(selector, selectedGroup.id, myMembership.share);
       setQuickPayMsg("✅ Paid successfully!");
       fetchGroups();
+      fetchUserStats();
+      fetchLeaderboard();
     } catch (err) {
       setQuickPayMsg(`❌ ${friendlyError(err)}`);
     } finally {
@@ -189,17 +227,25 @@ export default function App() {
 
           <div style={{ marginTop: 8, borderTop: "1px solid rgba(240, 217, 168, 0.25)", paddingTop: 8 }}>
             {accountId ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ fontSize: 9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                  <span style={{ color: "rgba(255,255,255,0.6)" }}>Player: </span>
-                  <strong style={{ color: "#27ae60", fontFamily: "var(--mono)", fontSize: 9 }}>
-                    {accountId.length > 16 ? `${accountId.slice(0, 14)}…` : accountId}
-                  </strong>
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ fontSize: 9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                    <span style={{ color: "rgba(255,255,255,0.6)" }}>Player: </span>
+                    <strong style={{ color: "#27ae60", fontFamily: "var(--mono)", fontSize: 9 }}>
+                      {accountId.length > 16 ? `${accountId.slice(0, 14)}…` : accountId}
+                    </strong>
+                  </div>
+                  <button onClick={handleDisconnect} style={{...miniBtnStyle, flexShrink: 0}}>
+                    Exit
+                  </button>
                 </div>
-                <button onClick={handleDisconnect} style={{...miniBtnStyle, flexShrink: 0}}>
-                  Exit
-                </button>
-              </div>
+                {userStats && (
+                  <div style={{ marginTop: 6, display: "flex", gap: 12, fontSize: 9, color: "var(--gold)" }}>
+                    <span>⭐ XP: <strong>{userStats.xp}</strong></span>
+                    <span>🏆 Level: <strong>{Math.floor(userStats.xp / 100) + 1}</strong></span>
+                  </div>
+                )}
+              </>
             ) : (
               <div>
                 <p style={{ margin: "0 0 4px", fontSize: 10, color: "rgba(255,255,255,0.7)" }}>
@@ -355,6 +401,31 @@ export default function App() {
                       )}
                     </div>
                   )}
+
+                  {/* Claim NFT Badge button if group is settled */}
+                  {selectedGroup.status === "Settled" && myMembership && myMembership.paid && (
+                    <div style={{ marginTop: 6 }}>
+                      <button
+                        onClick={async () => {
+                          if (!selector) return;
+                          try {
+                            await claimBadge(selector, selectedGroup.id);
+                            alert("🎖️ NFT Badge claimed successfully!");
+                            fetchUserStats();
+                          } catch (err) {
+                            alert(friendlyError(err));
+                          }
+                        }}
+                        style={{
+                          ...hudBtnPrimary,
+                          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          border: "2px solid #F0D9A8",
+                        }}
+                      >
+                        🎖️ Claim NFT Badge
+                      </button>
+                    </div>
+                  )}
                 </>
               );
             })()}
@@ -402,6 +473,12 @@ export default function App() {
               style={activeTab === "pay" ? activeTabStyle : tabStyle}
             >
               💸 Pay
+            </button>
+            <button
+              onClick={() => setActiveTab("leaderboard")}
+              style={activeTab === "leaderboard" ? activeTabStyle : tabStyle}
+            >
+              🏆 Leaderboard
             </button>
           </div>
 
@@ -493,10 +570,60 @@ export default function App() {
                 groups={groups}
                 onSuccess={() => {
                   fetchGroups();
+                  fetchUserStats();
+                  fetchLeaderboard();
                   setActiveTab("groups");
                 }}
                 embedded
               />
+            )}
+
+            {activeTab === "leaderboard" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <strong style={{ fontSize: 13, color: "#F0D9A8" }}>
+                    🏆 Top Players
+                  </strong>
+                  <button onClick={fetchLeaderboard} style={miniBtnStyle}>
+                    ↻ Refresh
+                  </button>
+                </div>
+
+                {leaderboard.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                    No players yet. Create a group to earn XP!
+                  </p>
+                ) : (
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                    {leaderboard.map(([accountId, stats], idx) => (
+                      <li
+                        key={accountId}
+                        style={{
+                          padding: "10px",
+                          marginBottom: 8,
+                          border: "2px solid var(--border)",
+                          borderRadius: 6,
+                          background: "rgba(36, 86, 56, 0.4)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: 11, color: "#F0D9A8", marginBottom: 4 }}>
+                              <strong>#{idx + 1} {accountId}</strong>
+                            </div>
+                            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
+                              Level {Math.floor(stats.xp / 100) + 1} • {stats.groups_created} created • {stats.groups_completed} completed
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 14, color: "var(--gold)", fontWeight: 700 }}>
+                            ⭐ {stats.xp}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
         </div>

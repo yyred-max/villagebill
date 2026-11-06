@@ -1,32 +1,25 @@
-The puzzle building logic is PERFECT (the glowing house for #2 Bali looks great). However, the terrain, trees, and animals are STILL completely missing. The map is just a flat green screen.
+The visual game world is PERFECT. I have verified the trees, path, chickens, and puzzle buildings are all rendering beautifully. DO NOT touch the Phaser code or CSS ever again.
 
-You are failing to guess the correct frame indices for the Kenney spritesheet. STOP using the spritesheet for decorations immediately.
+We are running out of time for the NEAR Hackathon. You must now execute the FINAL backend and integration tasks: **F8 - NFT Badge (NEP-171)** and **F9 - User Stats/XP/Leaderboard**. 
 
-Instead, use Phaser Graphics (`this.add.graphics()`) to draw them programmatically. This guarantees they will show up on screen.
+Do NOT write reports. Directly modify the code:
 
-Please implement this in `frontend/src/game/VillageScene.ts`:
+### Part 1: Smart Contract (Rust)
+1. **`contracts/splitbill-near/Cargo.toml`**: Add `near-contract-standards = "5.1.0"` to dependencies.
+2. **`contracts/splitbill-near/src/lib.rs`**:
+   - Add a simple NEP-171 implementation using `near_contract_standards::non_fungible_token::NonFungibleToken`.
+   - Add `claim_badge(group_id: u64)` function. Mints NFT ID `format!("badge-{}-{}", group_id, caller)`. Panics if group is not Settled, user hasn't paid, or already claimed.
+   - Add XP tracking: Add `user_stats: IterableMap<AccountId, UserStats>` to the Contract struct.
+   - Update `create_group`: +10 XP to owner.
+   - Update `pay_share`: +20 XP to payer. If group becomes Settled, +50 XP to all members who paid.
+   - Add view methods: `get_user_stats(account_id)` and `get_leaderboard(limit)`.
+   - Write basic Rust unit tests for the new functions.
 
-### 1. Draw the Dirt Path (drawTerrain)
-- Clear the flat green.
-- Draw a horizontal dirt path across the middle using a brown rectangle: `fillStyle(0x8d6e63); fillRect(0, height/2 - 30, width, 60);`
+### Part 2: Frontend Integration
+1. **`frontend/src/lib/contract.ts`**: Add helper functions to call `claim_badge`, `get_user_stats`, and `get_leaderboard`.
+2. **`frontend/src/App.tsx`**: 
+   - In the Top-Left HUD, display the connected user's XP and Level (Level = XP / 100 + 1).
+   - Add a new tab to the Right Sidebar called "🏆 Leaderboard" showing the top 5 users (Account ID and XP).
+3. **Group Details Panel**: If a group is `Settled`, and the connected user has paid, show a "🎖️ Claim NFT Badge" button that calls `claim_badge`.
 
-### 2. Draw Trees (spawnDecorations)
-- Scatter 10-15 trees around the map (avoiding the center path).
-- A tree is just a brown rectangle for the trunk, and a green circle for the leaves. 
-- Example code for a tree at (x,y):
-  `this.add.rectangle(x, y, 10, 20, 0x5d4037);` (trunk)
-  `this.add.circle(x, y - 15, 20, 0x2e7d32);` (leaves)
-
-### 3. Draw Street Lights (spawnDecorations)
-- Place 4-5 street lights along the dirt path.
-- A street light is a grey rectangle (pole) and a yellow circle (light) at the top.
-
-### 4. Draw Animals (spawnAnimals)
-- Instead of loading the spritesheet, draw 3 simple chickens.
-- A chicken is just a white circle for the body, a small red triangle for the beak/comb.
-- Animate them walking left and right using the exact same `tweens.add` logic you already have.
-
-### 5. Keep the Building Logic
-- DO NOT touch the puzzle building logic. It works perfectly.
-
-Make these visual changes using pure Phaser shapes. Ensure it compiles.
+Run `cargo build --target wasm32-unknown-unknown --release` and `npm run build` to ensure everything compiles. Then, provide the exact `near deploy` CLI commands I need to run.
