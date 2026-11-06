@@ -134,38 +134,44 @@ export default class VillageScene extends Phaser.Scene {
 
     const width = this.worldWidth;
     const height = this.worldHeight;
-    const rng = (a: number, b: number) => Phaser.Math.Between(a, b);
+    const rng = (min: number, max: number) =>
+      Phaser.Math.Between(min, max);
 
-    const treeFrames = [
-      T.TREE_ORANGE,
-      T.TREE_PINE,
-      T.TREE_BUSH,
-      T.TREE_TALL_PINE,
-      T.TREE_ROUND,
-      T.TREE_YELLOW,
-    ];
+    const treeKeys = Array.from(
+      { length: 8 },
+      (_, index) => `tree-${index + 1}`
+    );
 
-    const spacingX = 72;
-    const spacingY = 64;
-    const cols = Math.floor((width - 160) / spacingX);
-    const rows = Math.floor((height - 160) / spacingY);
+    // Jarak antarpohon. Kurangi angkanya untuk membuat hutan lebih rapat.
+    const spacingX = 100;
+    const spacingY = 100;
+    const cols = Math.floor((width - 120) / spacingX);
+    const rows = Math.floor((height - 120) / spacingY);
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const x = 80 + col * spacingX + rng(-8, 8);
-        const y = 80 + row * spacingY + rng(-8, 8);
+        const x = 60 + col * spacingX + rng(-15, 15);
+        const y = 60 + row * spacingY + rng(-15, 15);
 
-        // Sisakan ruang untuk jalan di tengah.
+        // Kosongkan area jalan di tengah.
         if (Math.abs(y - height / 2) < 110) continue;
 
-        // Buat kelompok terlihat alami, dengan celah kecil.
-        if (rng(0, 100) < 35) continue;
+        // Sisakan beberapa celah supaya susunannya tidak terlalu padat.
+        if (rng(0, 100) < 20) continue;
 
-        const frame = Phaser.Utils.Array.GetRandom(treeFrames);
-        const tree = this.add.image(x, y, "tinytown", frame);
+        const key = Phaser.Utils.Array.GetRandom(treeKeys);
+        const tree = this.add.image(x, y, key);
 
-        tree.setDisplaySize(32, 32);
-        tree.setOrigin(0.5, 0.85);
+        // Pohon ditambatkan pada pangkal batang.
+        tree.setOrigin(0.5, 1);
+
+        // Samakan tinggi tampilan; lebar mengikuti rasio gambar.
+        tree.setDisplaySize(
+          tree.width * (96 / tree.height),
+          96
+        );
+
+        // Pohon yang lebih bawah tampil di depan.
         tree.setDepth(y);
 
         this.decorations.push(tree);
