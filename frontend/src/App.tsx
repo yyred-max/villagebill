@@ -78,17 +78,25 @@ export default function App() {
 
   // ── Fetch Groups ───────────────────────────────────────────────────
   const fetchGroups = useCallback(async () => {
-    if (!selector) return;
+    if (!selector) {
+      console.warn("fetchGroups: selector not ready");
+      return;
+    }
     try {
       const data = await getGroups(selector);
       setGroups(data);
+      console.log("Groups fetched successfully:", data.length, "groups");
     } catch (err) {
       console.error("Failed to fetch groups:", err);
+      console.error("Error details:", err instanceof Error ? err.message : String(err));
     }
   }, [selector]);
 
   useEffect(() => {
-    if (selector) fetchGroups();
+    if (selector) {
+      console.log("Selector ready, fetching groups...");
+      fetchGroups();
+    }
   }, [selector, fetchGroups]);
 
   // ── Fetch User Stats & Leaderboard ─────────────────────────────────
@@ -282,13 +290,18 @@ export default function App() {
         )}
 
         {/* ── BOTTOM-LEFT: ACTIVITY FEED ── */}
-        <div className="hud-bottom-left">
-          <ActivityFeed
-            selector={selector!}
-            accountId={accountId}
-            onGroupsFetched={setGroups}
-          />
-        </div>
+        {selector && (
+          <div className="hud-bottom-left">
+            <ActivityFeed
+              selector={selector}
+              accountId={accountId}
+              onGroupsFetched={(groups) => {
+                console.log("ActivityFeed: Groups updated from polling:", groups.length, "groups");
+                setGroups(groups);
+              }}
+            />
+          </div>
+        )}
 
         {/* ── CENTER-BOTTOM: SELECTED GROUP DETAILS POPUP ── */}
         {selectedGroup && (
