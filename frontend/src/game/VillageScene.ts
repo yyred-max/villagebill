@@ -136,30 +136,40 @@ export default class VillageScene extends Phaser.Scene {
     const height = this.worldHeight;
     const rng = (a: number, b: number) => Phaser.Math.Between(a, b);
 
-    const treeFrames = [T.TREE_ORANGE, T.TREE_PINE, T.TREE_BUSH, T.TREE_TALL_PINE, T.TREE_ROUND, T.TREE_YELLOW];
+    const treeFrames = [
+      T.TREE_ORANGE,
+      T.TREE_PINE,
+      T.TREE_BUSH,
+      T.TREE_TALL_PINE,
+      T.TREE_ROUND,
+      T.TREE_YELLOW,
+    ];
 
-    for (let i = 0; i < 28; i++) {
-      const x = rng(48, width - 48);
-      const y = rng(48, height - 48);
+    const spacingX = 72;
+    const spacingY = 64;
+    const cols = Math.floor((width - 160) / spacingX);
+    const rows = Math.floor((height - 160) / spacingY);
 
-      // Hindari jalan
-      if (Math.abs(y - height / 2) < 90) continue;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const x = 80 + col * spacingX + rng(-8, 8);
+        const y = 80 + row * spacingY + rng(-8, 8);
 
-      const frame = Phaser.Utils.Array.GetRandom(treeFrames);
-      const tree = this.add.image(x, y, "tinytown", frame);
-      tree.setDisplaySize(32, 32); // scale 2x biar lebih kelihatan
-      tree.setDepth(2);
-      this.decorations.push(tree);
+        // Sisakan ruang untuk jalan di tengah.
+        if (Math.abs(y - height / 2) < 110) continue;
 
-      // Sway pelan
-      this.tweens.add({
-        targets: tree,
-        angle: rng(-4, 4),
-        duration: rng(2200, 4000),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
+        // Buat kelompok terlihat alami, dengan celah kecil.
+        if (rng(0, 100) < 35) continue;
+
+        const frame = Phaser.Utils.Array.GetRandom(treeFrames);
+        const tree = this.add.image(x, y, "tinytown", frame);
+
+        tree.setDisplaySize(32, 32);
+        tree.setOrigin(0.5, 0.85);
+        tree.setDepth(y);
+
+        this.decorations.push(tree);
+      }
     }
   }
 
