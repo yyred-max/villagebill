@@ -225,53 +225,57 @@ const labelStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 4,
-  fontSize: 14,
+  fontSize: 11,
   fontWeight: 600,
-  color: "var(--text-h)",
+  fontFamily: "var(--mono)",
+  color: "var(--gold)",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  fontSize: 15,
+  borderRadius: 4,
+  border: "2px solid var(--border)",
+  fontSize: 12,
   fontFamily: "var(--mono)",
   background: "var(--code-bg)",
-  color: "var(--text-h)",
+  color: "var(--cream)",
 };
 
 const detailsBoxStyle: React.CSSProperties = {
   marginTop: 12,
-  padding: "12px 14px",
-  border: "1px solid var(--border)",
+  padding: "10px 12px",
+  border: "2px solid var(--border)",
   borderRadius: 6,
-  background: "var(--code-bg)",
+  background: "rgba(24, 61, 43, 0.75)",
 };
 
 const progressBarBg: React.CSSProperties = {
   width: "100%",
   height: 8,
-  borderRadius: 4,
-  background: "var(--border)",
+  borderRadius: 3,
+  background: "rgba(0, 0, 0, 0.4)",
+  border: "1px solid var(--border)",
   overflow: "hidden",
 };
 
 const progressBarFill: React.CSSProperties = {
   height: "100%",
-  borderRadius: 4,
+  borderRadius: 2,
   transition: "width 0.3s ease",
 };
 
 const btnPayStyle: React.CSSProperties = {
   width: "100%",
-  padding: "12px 20px",
-  borderRadius: 6,
-  border: "none",
-  background: "#27ae60",
-  color: "#fff",
+  padding: "10px 16px",
+  borderRadius: 4,
+  border: "2px solid var(--gold)",
+  background: "var(--wood-dark)",
+  color: "var(--cream)",
   fontWeight: 700,
   cursor: "pointer",
-  fontSize: 16,
+  fontSize: 12,
+  fontFamily: "var(--mono)",
+  boxShadow: "0 3px 0 rgba(0, 0, 0, 0.4)",
 };
 
 const errStyle: React.CSSProperties = {

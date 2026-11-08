@@ -25,6 +25,7 @@ export default class VillageScene extends Phaser.Scene {
   private terrainLayer?: Phaser.GameObjects.Group;
   private decorations: Phaser.GameObjects.GameObject[] = [];
   private animals: Phaser.GameObjects.Image[] = [];
+  private farmer?: Phaser.GameObjects.Container;
   private isDragging = false;
   private dragStart = { x: 0, y: 0 };
   private camStart = { x: 0, y: 0 };
@@ -61,6 +62,7 @@ export default class VillageScene extends Phaser.Scene {
     this.drawTerrain();
     this.spawnDecorations();
     this.spawnAnimals();
+    this.spawnFarmer();
     this.renderBuildings();
     this.setupCameraControls();
 
@@ -153,6 +155,103 @@ export default class VillageScene extends Phaser.Scene {
         this.decorations.push(tree);
       }
     }
+
+    // Cozy Stardew Wildflower patches
+    const flowerColors = [0xffd54f, 0xf48fb1, 0xffffff, 0x81d4fa];
+    for (let i = 0; i < 40; i++) {
+      const fx = rng(60, width - 60);
+      const fy = rng(60, height - 60);
+      if (Math.abs(fy - height / 2) < 50) continue; // Keep main road clear
+
+      const flower = this.add.graphics();
+      flower.fillStyle(Phaser.Utils.Array.GetRandom(flowerColors), 1);
+      flower.fillCircle(0, 0, 2.5);
+      flower.fillStyle(0x43a047, 1);
+      flower.fillRect(-0.5, 2, 1, 3);
+      flower.setPosition(fx, fy);
+      flower.setDepth(1);
+      this.decorations.push(flower);
+    }
+
+    // Wooden farm fences along the dirt path borders
+    const pathCenterY = height / 2;
+    for (let fx = 80; fx < width - 80; fx += 50) {
+      if (rng(0, 100) < 35) continue; // Natural gaps for walking through
+
+      // Top fence line
+      const postTop = this.add.rectangle(fx, pathCenterY - 34, 4, 12, 0x5d4037);
+      const railTop = this.add.rectangle(fx + 12, pathCenterY - 36, 26, 2, 0x8d6e63);
+      postTop.setDepth(pathCenterY - 32);
+      railTop.setDepth(pathCenterY - 32);
+      this.decorations.push(postTop, railTop);
+
+      // Bottom fence line
+      const postBot = this.add.rectangle(fx, pathCenterY + 34, 4, 12, 0x5d4037);
+      const railBot = this.add.rectangle(fx + 12, pathCenterY + 32, 26, 2, 0x8d6e63);
+      postBot.setDepth(pathCenterY + 36);
+      railBot.setDepth(pathCenterY + 36);
+      this.decorations.push(postBot, railBot);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // ANIMATED FARMER PLAYER CHARACTER
+  // ─────────────────────────────────────────────
+  private spawnFarmer() {
+    if (this.farmer) this.farmer.destroy();
+
+    const startX = this.worldWidth / 2 - 80;
+    const startY = this.worldHeight / 2 + 10;
+
+    const container = this.add.container(startX, startY);
+    container.setDepth(startY + 5);
+
+    // Drop shadow
+    const shadow = this.add.ellipse(0, 16, 22, 8, 0x000000, 0.35);
+
+    // Overalls (blue denim)
+    const legs = this.add.rectangle(0, 10, 12, 10, 0x1565c0);
+    const body = this.add.rectangle(0, 2, 14, 12, 0xc62828); // red plaid flannel
+    const straps = this.add.rectangle(0, 2, 8, 10, 0x1565c0); // denim bib
+
+    // Head & face
+    const head = this.add.circle(0, -9, 7, 0xffcc80);
+    const eyeL = this.add.circle(-2, -9, 1.5, 0x212121);
+    const eyeR = this.add.circle(2, -9, 1.5, 0x212121);
+
+    // Farmer's Straw Hat
+    const hatBrim = this.add.ellipse(0, -15, 26, 8, 0xfbc02d);
+    const hatTop = this.add.rectangle(0, -18, 14, 8, 0xf9a825);
+    const hatBand = this.add.rectangle(0, -15, 14, 2, 0xb71c1c);
+
+    container.add([shadow, legs, body, straps, head, eyeL, eyeR, hatBrim, hatTop, hatBand]);
+    this.farmer = container;
+
+    // Walking path animation back and forth along village road
+    this.tweens.add({
+      targets: container,
+      x: startX + 160,
+      duration: 4500,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+      onYoyo: () => {
+        container.setScale(-1, 1); // Flip facing left
+      },
+      onRepeat: () => {
+        container.setScale(1, 1); // Flip facing right
+      },
+    });
+
+    // Walking bob animation
+    this.tweens.add({
+      targets: [body, head, hatBrim, hatTop, hatBand],
+      y: "-=2",
+      duration: 220,
+      yoyo: true,
+      repeat: -1,
+      ease: "Quad.easeInOut",
+    });
   }
 
   // ─────────────────────────────────────────────

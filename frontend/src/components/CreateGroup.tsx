@@ -99,23 +99,25 @@ const embeddedSectionStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
-  borderRadius: 6,
-  border: "1px solid var(--border)",
-  fontSize: 15,
+  borderRadius: 4,
+  border: "2px solid var(--border)",
+  fontSize: 13,
   fontFamily: "var(--mono)",
   background: "var(--code-bg)",
-  color: "var(--text-h)",
+  color: "var(--cream)",
 };
 
 const btnPrimary: React.CSSProperties = {
-  padding: "10px 20px",
-  borderRadius: 6,
-  border: "none",
-  background: "var(--accent)",
-  color: "#fff",
-  fontWeight: 600,
+  padding: "8px 16px",
+  borderRadius: 4,
+  border: "2px solid var(--gold)",
+  background: "var(--wood-dark)",
+  color: "var(--cream)",
+  fontWeight: 700,
   cursor: "pointer",
-  fontSize: 15,
+  fontSize: 12,
+  fontFamily: "var(--mono)",
+  boxShadow: "0 3px 0 rgba(0, 0, 0, 0.4)",
 };
 
 const errStyle: React.CSSProperties = {
